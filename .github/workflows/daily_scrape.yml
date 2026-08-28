@@ -34,6 +34,6 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add daily_jobs.md history.json
+          git add daily_jobs.md history.json pending_applications.json
           git commit -m "Update daily jobs and history" || echo "No changes to commit"
           git push

@@ -1,45 +1,49 @@
 import os
 import csv
 import json
+import asyncio
+import aiohttp
 import requests
+import urllib3
+import re
 from datetime import datetime
 
-import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- CONFIGURATION ---
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 TARGET_TERMS = ['data engineer', 'data engineering', 'analytics engineer']
-TARGET_LOCATIONS = ['london', 'uk', 'united kingdom', 'remote - uk', 'hybrid']
+TARGET_LOCATIONS = ['london', 'uk', 'united kingdom', 'remote', 'hybrid', 'emea']
 
-# Large list of ATS companies to check
-COMPANIES = [
-    "monzo", "revolut", "thoughtworks", "gigs", "coreweave", "wise", "checkout", 
-    "elixirr", "plaid", "stripe", "roblox", "discord", "airbnb", "canva", "notion", 
-    "figma", "github", "gitlab", "doordash", "instacart", "databricks", "snowflake", 
-    "confluent", "hashicorp", "mongodb", "elastic", "affirm", "brex", "ramp", 
-    "rippling", "palantir", "datadog", "okta", "crowdstrike", "zscaler", "cloudflare", 
-    "twilio", "zoom", "slack", "atlassian", "docusign", "dropbox", "box", "asana", 
-    "monday", "smartsheet", "hubspot", "salesforce", "adobe", "autodesk", "unity", 
-    "epicgames", "riotgames", "ea", "take2", "activision", "zynga", "tencent", 
-    "bytedance", "tiktok", "snap", "pinterest", "twitter", "block", "square", 
-    "coinbase", "kraken", "binance", "gemini", "robinhood", "wealthfront", "betterment", 
-    "chime", "sofi", "klarna", "adyen", "dlocal", "marqeta", "fivetran", "dbtlabs", 
-    "prefect", "dagster", "astronomer", "trino", "starburst", "dremio", "clickhouse", 
-    "singlestore", "cockroachlabs", "yugabyte", "planetscale", "neon", "supabase", 
-    "vercel", "netlify", "heroku", "digitalocean", "linode", "flyio", "render", 
-    "railway", "deliveroo", "spotify", "gusto"
+# Keywords to filter the official sponsor list for tech companies
+TECH_KEYWORDS = [
+    'tech', 'software', 'data', 'cloud', 'digital', 'analytic', 
+    'ai', 'machine learning', 'fintech', 'cyber', 'system', 'network'
 ]
 
-def fetch_sponsors():
-    """Downloads the official UK Home Office sponsor list and returns a set of lowercase company names."""
+def load_manual_companies():
+    """Loads companies from companies.txt if it exists."""
+    companies = set()
+    if os.path.exists("companies.txt"):
+        with open("companies.txt", "r", encoding="utf-8") as f:
+            for line in f:
+                c = line.strip().lower()
+                if c: companies.add(c)
+    return companies
+
+def fetch_sponsors_and_generate_tenants():
+    """
+    Downloads the UK Home Office sponsor list.
+    Returns:
+    1. A set of raw sponsor names (for validation).
+    2. A set of generated ATS tenant IDs (by filtering tech companies and cleaning names).
+    """
     print("Fetching the latest UK Register of Licensed Sponsors CSV...")
     csv_url = "https://assets.publishing.service.gov.uk/media/6a8ff32b5a0c25165ae465cc/SP_-_Worker_and_Temporary_Worker_Web_Register_-_2026-08-27.csv"
+    
     try:
         resp = requests.get(csv_url, timeout=15, verify=False)
-        # If the URL changes (it updates daily), we fallback to the landing page to extract it
         if resp.status_code != 200:
-            print("Direct link failed, trying to parse HTML for latest CSV...")
             page = requests.get("https://www.gov.uk/government/publications/register-of-licensed-sponsors-workers", timeout=10, verify=False)
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(page.text, 'html.parser')
@@ -52,71 +56,91 @@ def fetch_sponsors():
                     break
 
         sponsors = set()
+        tenant_ids = set()
+        
         decoded_content = resp.content.decode('utf-8-sig')
         reader = csv.reader(decoded_content.splitlines())
+        
         for row in reader:
             if row and len(row) > 0:
-                sponsors.add(row[0].strip().lower())
+                raw_name = row[0].strip().lower()
+                sponsors.add(raw_name)
+                
+                # Check if it's a tech company
+                if any(kw in raw_name for kw in TECH_KEYWORDS):
+                    # Clean the name to guess the ATS tenant ID
+                    # e.g. "Deliveroo Ltd" -> "deliveroo"
+                    clean_name = raw_name.replace(" ltd", "").replace(" limited", "").replace(" uk", "")
+                    clean_name = re.sub(r'[^a-z0-9]', '', clean_name)
+                    if len(clean_name) > 3:
+                        tenant_ids.add(clean_name)
+                        
         print(f"Loaded {len(sponsors)} licensed sponsors.")
-        return sponsors
+        print(f"Generated {len(tenant_ids)} potential tech ATS tenant IDs.")
+        return sponsors, tenant_ids
+        
     except Exception as e:
         print(f"Error fetching sponsors: {e}")
-        return set()
+        return set(), set()
 
 def is_sponsored(company_name, sponsors_set):
-    """Checks if a company name exists in the sponsor set."""
     company_norm = company_name.strip().lower()
     if company_norm in sponsors_set:
         return True
-    
-    # Check partial match for larger entities
     for s in sponsors_set:
         if company_norm in s or s in company_norm:
-            # Basic sanity check to avoid matching "and" or short words
             if len(company_norm) > 4 and len(s) > 4:
                 return True
     return False
 
-def fetch_jobs(company):
-    """Fetches jobs from Greenhouse, Lever, and Ashby APIs."""
-    found = []
-    # Greenhouse
+async def fetch_greenhouse(session, company):
     try:
-        gh = requests.get(f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs", timeout=5)
-        if gh.status_code == 200:
-            for job in gh.json().get('jobs', []):
-                found.append({
-                    'title': job.get('title', ''),
-                    'location': job.get('location', {}).get('name', ''),
-                    'url': job.get('absolute_url', '')
-                })
+        async with session.get(f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs", timeout=5, ssl=False) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return company, [{'title': j.get('title',''), 'location': j.get('location',{}).get('name',''), 'url': j.get('absolute_url','')} for j in data.get('jobs', [])]
     except: pass
-    
-    # Lever
-    try:
-        lv = requests.get(f"https://api.lever.co/v0/postings/{company}", timeout=5)
-        if lv.status_code == 200:
-            for job in lv.json():
-                found.append({
-                    'title': job.get('text', ''),
-                    'location': job.get('categories', {}).get('location', ''),
-                    'url': job.get('hostedUrl', '')
-                })
-    except: pass
+    return company, []
 
-    # Ashby
+async def fetch_lever(session, company):
     try:
-        ash = requests.get(f"https://api.ashbyhq.com/posting-api/job-board/{company}", timeout=5)
-        if ash.status_code == 200:
-            for job in ash.json().get('jobs', []):
-                found.append({
-                    'title': job.get('title', ''),
-                    'location': job.get('location', ''),
-                    'url': job.get('url', '')
-                })
+        async with session.get(f"https://api.lever.co/v0/postings/{company}", timeout=5, ssl=False) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return company, [{'title': j.get('text',''), 'location': j.get('categories',{}).get('location',''), 'url': j.get('hostedUrl','')} for j in data]
     except: pass
-    
-    return found
+    return company, []
+
+async def fetch_ashby(session, company):
+    try:
+        async with session.get(f"https://api.ashbyhq.com/posting-api/job-board/{company}", timeout=5, ssl=False) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return company, [{'title': j.get('title',''), 'location': j.get('location',''), 'url': j.get('url','')} for j in data.get('jobs', [])]
+    except: pass
+    return company, []
+
+async def scan_companies(tenant_ids):
+    print(f"Scanning {len(tenant_ids)} companies asynchronously...")
+    connector = aiohttp.TCPConnector(limit=50) # Limit concurrent connections
+    async with aiohttp.ClientSession(connector=connector) as session:
+        tasks = []
+        for company in tenant_ids:
+            tasks.append(fetch_greenhouse(session, company))
+            tasks.append(fetch_lever(session, company))
+            tasks.append(fetch_ashby(session, company))
+        
+        results = await asyncio.gather(*tasks)
+        
+    # Flatten results
+    all_jobs = []
+    for company, jobs in results:
+        for job in jobs:
+            job['company'] = company
+            all_jobs.append(job)
+            
+    print(f"Scanned {len(results)} endpoints. Found {len(all_jobs)} total tech jobs.")
+    return all_jobs
 
 def send_discord_webhook(jobs):
     if not DISCORD_WEBHOOK_URL:
@@ -126,18 +150,18 @@ def send_discord_webhook(jobs):
     for job in jobs:
         embed = {
             "title": f"🚀 New Sponsored Role: {job['company']} - {job['title']}",
-            "description": f"**Location:** {job['location']}\n**Company:** {job['company']}\n\n[Apply Here]({job['url']})",
+            "description": f"**Location:** {job['location']}\n**Company:** {job['company'].title()}\n\n[Apply Here]({job['url']})",
             "color": 5814783,
             "footer": {"text": "UK Sponsorship Job Validator"}
         }
         
         data = {
-            "content": "<@&123456789> A new Data Engineer role with UK Visa Sponsorship was found!" if len(jobs) > 0 else "", # Modify ping if needed
+            "content": "<@&123456789> A new Data Engineer role with UK Visa Sponsorship was found!" if len(jobs) > 0 else "", 
             "embeds": [embed]
         }
         
         try:
-            requests.post(DISCORD_WEBHOOK_URL, json=data)
+            requests.post(DISCORD_WEBHOOK_URL, json=data, verify=False)
         except Exception as e:
             print(f"Error sending to Discord: {e}")
 
@@ -152,16 +176,45 @@ def update_markdown(jobs):
         if jobs:
             f.write(f"## New Jobs Found on {datetime.now().strftime('%Y-%m-%d')}\n\n")
             for job in jobs:
-                f.write(f"- **{job['company']}**: [{job['title']}]({job['url']}) - *{job['location']}*\n")
+                f.write(f"- **{job['company'].title()}**: [{job['title']}]({job['url']}) - *{job['location']}*\n")
             f.write("\n")
 
-def main():
-    sponsors = fetch_sponsors()
-    if not sponsors:
-        print("Could not load sponsors. Exiting.")
-        return
+def update_queue(jobs):
+    file_path = "pending_applications.json"
+    queue = []
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding='utf-8') as f:
+                queue = json.load(f)
+        except:
+            pass
+            
+    # Avoid adding duplicates to the queue just in case
+    existing_urls = {j['url'] for j in queue}
+    for job in jobs:
+        if job['url'] not in existing_urls:
+            queue.append({
+                "company": job['company'].title(),
+                "title": job['title'],
+                "location": job['location'],
+                "url": job['url'],
+                "added_date": datetime.now().strftime('%Y-%m-%d')
+            })
+            
+    with open(file_path, "w", encoding='utf-8') as f:
+        json.dump(queue, f, indent=4)
 
-    # Load history to avoid duplicate notifications
+async def main():
+    sponsors, generated_tenants = fetch_sponsors_and_generate_tenants()
+    if not sponsors: return
+
+    manual_tenants = load_manual_companies()
+    all_tenants = generated_tenants.union(manual_tenants)
+    
+    # Run async scan
+    all_jobs = await scan_companies(all_tenants)
+
+    # Load history
     history_file = "history.json"
     if os.path.exists(history_file):
         with open(history_file, "r") as f:
@@ -171,37 +224,29 @@ def main():
 
     new_jobs = []
 
-    print("Checking ATS APIs for open roles...")
-    for company in COMPANIES:
-        jobs = fetch_jobs(company)
-        for job in jobs:
-            title = job['title'].lower()
-            loc = job['location'].lower()
-            url = job['url']
-            
-            # Filter by role and location
-            matches_title = any(term in title for term in TARGET_TERMS)
-            matches_loc = any(l in loc for l in TARGET_LOCATIONS)
-            
-            if matches_title and matches_loc:
-                if is_sponsored(company, sponsors):
-                    if url not in history:
-                        print(f"[NEW SPONSORED JOB] {company} - {job['title']}")
-                        new_jobs.append({
-                            'company': company.title(),
-                            'title': job['title'],
-                            'location': job['location'],
-                            'url': url
-                        })
-                        history.add(url)
-                    else:
-                        print(f"[ALREADY SEEN] {company} - {job['title']}")
+    print("Filtering for Target Roles & Sponsorship...")
+    for job in all_jobs:
+        title = job['title'].lower()
+        loc = job['location'].lower()
+        url = job['url']
+        company = job['company']
+        
+        matches_title = any(term in title for term in TARGET_TERMS)
+        matches_loc = any(l in loc for l in TARGET_LOCATIONS)
+        
+        if matches_title and matches_loc:
+            # We already know manual ones are fine, but generated ones MUST be in sponsor list
+            if is_sponsored(company, sponsors) or company in manual_tenants:
+                if url not in history:
+                    print(f"[NEW SPONSORED JOB] {company} - {job['title']}")
+                    new_jobs.append(job)
+                    history.add(url)
 
     if new_jobs:
         send_discord_webhook(new_jobs)
         update_markdown(new_jobs)
+        update_queue(new_jobs)
         
-        # Save history
         with open(history_file, "w") as f:
             json.dump(list(history), f)
         print(f"Successfully processed {len(new_jobs)} new jobs.")
@@ -209,4 +254,4 @@ def main():
         print("No new sponsored jobs found today.")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
