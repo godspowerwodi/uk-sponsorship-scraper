@@ -2,7 +2,7 @@ name: Daily UK Sponsorship Job Scraper
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs at 00:00 UTC every day
+    - cron: '30 0 * * *'  # Runs at 00:30 UTC to avoid GitHub's midnight bottleneck
   workflow_dispatch:      # Allows you to trigger the run manually from the GitHub UI
 
 jobs:

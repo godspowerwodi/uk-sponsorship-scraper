@@ -13,7 +13,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # --- CONFIGURATION ---
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 TARGET_TERMS = ['data engineer', 'data engineering', 'analytics engineer']
-TARGET_LOCATIONS = ['london', 'uk', 'united kingdom', 'remote', 'hybrid', 'emea']
+TARGET_LOCATIONS = ['london', 'uk', 'united kingdom', 'remote uk', 'uk remote', 'hybrid - uk']
 
 # Keywords to filter the official sponsor list for tech companies
 TECH_KEYWORDS = [
