@@ -11,3 +11,7 @@
 
 - **Datapao**: [Senior Data Engineer (Databricks) - UK](https://job-boards.eu.greenhouse.io/datapao/jobs/4768709101) - *United Kingdom*
 
+## New Jobs Found on 2026-08-30
+
+- **Valtech**: [Senior Data Engineer](https://job-boards.eu.greenhouse.io/valtech/jobs/4890415101) - *Ukraine - Remote*
+
