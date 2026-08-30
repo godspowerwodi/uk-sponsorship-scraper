@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '30 0 * * *'  # Runs at 00:30 UTC to avoid GitHub's midnight bottleneck
   workflow_dispatch:      # Allows you to trigger the run manually from the GitHub UI
+  repository_dispatch:
+    types: [daily_scrape_trigger]
 
 jobs:
   scrape-jobs:
