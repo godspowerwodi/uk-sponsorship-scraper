@@ -10,32 +10,51 @@ on:
 jobs:
   scrape-jobs:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          
+          python-version: '3.10'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Scraper
+      - name: Run Job Scraper
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          # Add any friends' webhooks here
+          FRIEND_A_WEBHOOK_URL: ${{ secrets.FRIEND_A_WEBHOOK_URL }}
         run: python daily_job_scraper.py
 
       - name: Commit and push updated artifacts
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add daily_jobs.md history.json pending_applications.json
-          git commit -m "Update daily jobs and history" || echo "No changes to commit"
+          git add users.json queue_*.json history_*.json
+          git commit -m "Update daily jobs and multi-tenant history" || echo "No changes to commit"
           git push
+
+      - name: Push Queues to Secret Gist
+        env:
+          GH_TOKEN: ${{ secrets.GIST_TOKEN }}
+          GIST_ID: ${{ secrets.GIST_ID }}
+        run: |
+          # Only run if the user has provided the Gist secrets
+          if [ -n "$GIST_ID" ] && [ -n "$GH_TOKEN" ]; then
+            for file in queue_*.json; do
+              if [ -f "$file" ]; then
+                echo "Uploading $file to Gist..."
+                gh gist edit $GIST_ID -a "$file" || echo "Failed to upload $file"
+              fi
+            done
+          else
+            echo "Skipping Gist upload: GIST_ID or GIST_TOKEN not set."
+          fi

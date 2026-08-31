@@ -10,16 +10,19 @@ from datetime import datetime
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# --- CONFIGURATION ---
-DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
-TARGET_TERMS = ['data engineer', 'data engineering', 'analytics engineer']
-TARGET_LOCATIONS = ['london', 'uk', 'united kingdom', 'remote uk', 'uk remote', 'hybrid - uk']
-
 # Keywords to filter the official sponsor list for tech companies
 TECH_KEYWORDS = [
     'tech', 'software', 'data', 'cloud', 'digital', 'analytic', 
     'ai', 'machine learning', 'fintech', 'cyber', 'system', 'network'
 ]
+
+def load_users():
+    """Loads users from users.json."""
+    if os.path.exists("users.json"):
+        with open("users.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    print("WARNING: No users.json found.")
+    return []
 
 def load_manual_companies():
     """Loads companies from companies.txt if it exists."""
@@ -32,12 +35,6 @@ def load_manual_companies():
     return companies
 
 def fetch_sponsors_and_generate_tenants():
-    """
-    Downloads the UK Home Office sponsor list.
-    Returns:
-    1. A set of raw sponsor names (for validation).
-    2. A set of generated ATS tenant IDs (by filtering tech companies and cleaning names).
-    """
     print("Fetching the latest UK Register of Licensed Sponsors CSV...")
     csv_url = "https://assets.publishing.service.gov.uk/media/6a8ff32b5a0c25165ae465cc/SP_-_Worker_and_Temporary_Worker_Web_Register_-_2026-08-27.csv"
     
@@ -66,10 +63,7 @@ def fetch_sponsors_and_generate_tenants():
                 raw_name = row[0].strip().lower()
                 sponsors.add(raw_name)
                 
-                # Check if it's a tech company
                 if any(kw in raw_name for kw in TECH_KEYWORDS):
-                    # Clean the name to guess the ATS tenant ID
-                    # e.g. "Deliveroo Ltd" -> "deliveroo"
                     clean_name = raw_name.replace(" ltd", "").replace(" limited", "").replace(" uk", "")
                     clean_name = re.sub(r'[^a-z0-9]', '', clean_name)
                     if len(clean_name) > 3:
@@ -122,7 +116,7 @@ async def fetch_ashby(session, company):
 
 async def scan_companies(tenant_ids):
     print(f"Scanning {len(tenant_ids)} companies asynchronously...")
-    connector = aiohttp.TCPConnector(limit=50) # Limit concurrent connections
+    connector = aiohttp.TCPConnector(limit=50) 
     async with aiohttp.ClientSession(connector=connector) as session:
         tasks = []
         for company in tenant_ids:
@@ -132,7 +126,6 @@ async def scan_companies(tenant_ids):
         
         results = await asyncio.gather(*tasks)
         
-    # Flatten results
     all_jobs = []
     for company, jobs in results:
         for job in jobs:
@@ -142,9 +135,8 @@ async def scan_companies(tenant_ids):
     print(f"Scanned {len(results)} endpoints. Found {len(all_jobs)} total tech jobs.")
     return all_jobs
 
-def send_discord_webhook(jobs):
-    if not DISCORD_WEBHOOK_URL:
-        print("No Discord Webhook URL provided. Skipping notification.")
+def send_discord_webhook(jobs, webhook_url):
+    if not webhook_url:
         return
 
     for job in jobs:
@@ -156,31 +148,17 @@ def send_discord_webhook(jobs):
         }
         
         data = {
-            "content": "<@&123456789> A new Data Engineer role with UK Visa Sponsorship was found!" if len(jobs) > 0 else "", 
+            "content": "", 
             "embeds": [embed]
         }
         
         try:
-            requests.post(DISCORD_WEBHOOK_URL, json=data, verify=False)
+            requests.post(webhook_url, json=data, verify=False)
         except Exception as e:
             print(f"Error sending to Discord: {e}")
 
-def update_markdown(jobs):
-    file_path = "daily_jobs.md"
-    mode = "a" if os.path.exists(file_path) else "w"
-    
-    with open(file_path, mode, encoding='utf-8') as f:
-        if mode == "w":
-            f.write("# Daily UK Sponsorship Job Alerts\n\n")
-            
-        if jobs:
-            f.write(f"## New Jobs Found on {datetime.now().strftime('%Y-%m-%d')}\n\n")
-            for job in jobs:
-                f.write(f"- **{job['company'].title()}**: [{job['title']}]({job['url']}) - *{job['location']}*\n")
-            f.write("\n")
-
-def update_queue(jobs):
-    file_path = "pending_applications.json"
+def update_queue(jobs, username):
+    file_path = f"queue_{username}.json"
     queue = []
     if os.path.exists(file_path):
         try:
@@ -189,7 +167,6 @@ def update_queue(jobs):
         except:
             pass
             
-    # Avoid adding duplicates to the queue just in case
     existing_urls = {j['url'] for j in queue}
     for job in jobs:
         if job['url'] not in existing_urls:
@@ -205,53 +182,64 @@ def update_queue(jobs):
         json.dump(queue, f, indent=4)
 
 async def main():
+    users = load_users()
+    if not users:
+        print("No users configured.")
+        return
+
     sponsors, generated_tenants = fetch_sponsors_and_generate_tenants()
     if not sponsors: return
 
     manual_tenants = load_manual_companies()
     all_tenants = generated_tenants.union(manual_tenants)
     
-    # Run async scan
+    # 1. Run async scan exactly once
     all_jobs = await scan_companies(all_tenants)
 
-    # Load history
-    history_file = "history.json"
-    if os.path.exists(history_file):
-        with open(history_file, "r") as f:
-            history = set(json.load(f))
-    else:
-        history = set()
-
-    new_jobs = []
-
-    print("Filtering for Target Roles & Sponsorship...")
-    for job in all_jobs:
-        title = job['title'].lower()
-        loc = job['location'].lower()
-        url = job['url']
-        company = job['company']
+    # 2. Process jobs for each user independently
+    for user in users:
+        username = user.get("username", "unknown")
+        print(f"--- Processing jobs for user: {username} ---")
         
-        matches_title = any(term in title for term in TARGET_TERMS)
-        matches_loc = any(l in loc for l in TARGET_LOCATIONS)
-        
-        if matches_title and matches_loc:
-            # We already know manual ones are fine, but generated ones MUST be in sponsor list
-            if is_sponsored(company, sponsors) or company in manual_tenants:
-                if url not in history:
-                    print(f"[NEW SPONSORED JOB] {company} - {job['title']}")
-                    new_jobs.append(job)
-                    history.add(url)
+        target_terms = user.get("target_terms", [])
+        target_locations = user.get("target_locations", [])
+        webhook_env_key = user.get("discord_webhook_env", "")
+        webhook_url = os.environ.get(webhook_env_key, "")
 
-    if new_jobs:
-        send_discord_webhook(new_jobs)
-        update_markdown(new_jobs)
-        update_queue(new_jobs)
-        
-        with open(history_file, "w") as f:
-            json.dump(list(history), f)
-        print(f"Successfully processed {len(new_jobs)} new jobs.")
-    else:
-        print("No new sponsored jobs found today.")
+        history_file = f"history_{username}.json"
+        if os.path.exists(history_file):
+            with open(history_file, "r") as f:
+                history = set(json.load(f))
+        else:
+            history = set()
+
+        new_jobs = []
+
+        for job in all_jobs:
+            title = job['title'].lower()
+            loc = job['location'].lower()
+            url = job['url']
+            company = job['company']
+            
+            matches_title = any(term in title for term in target_terms)
+            matches_loc = any(l in loc for l in target_locations)
+            
+            if matches_title and matches_loc:
+                if is_sponsored(company, sponsors) or company in manual_tenants:
+                    if url not in history:
+                        print(f"[{username}] Found: {company} - {job['title']}")
+                        new_jobs.append(job)
+                        history.add(url)
+
+        if new_jobs:
+            send_discord_webhook(new_jobs, webhook_url)
+            update_queue(new_jobs, username)
+            
+            with open(history_file, "w") as f:
+                json.dump(list(history), f)
+            print(f"[{username}] Processed {len(new_jobs)} new jobs.\n")
+        else:
+            print(f"[{username}] No new jobs today.\n")
 
 if __name__ == "__main__":
     asyncio.run(main())
