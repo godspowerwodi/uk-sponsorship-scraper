@@ -12,5 +12,40 @@
         "location": "United Kingdom",
         "url": "https://job-boards.eu.greenhouse.io/datapao/jobs/4768709101",
         "added_date": "2026-08-31"
+    },
+    {
+        "company": "Gigs",
+        "title": "Senior Data Engineer",
+        "location": "London, Berlin, Amsterdam",
+        "url": "https://gigs.com/careers?gh_jid=4728278101",
+        "added_date": "2026-08-31"
+    },
+    {
+        "company": "Spotify",
+        "title": "Senior Data Engineer - Data Platform",
+        "location": "London",
+        "url": "https://jobs.lever.co/spotify/204f6cd7-98a3-4360-87e3-8876adf087da",
+        "added_date": "2026-08-31"
+    },
+    {
+        "company": "Deliveroo",
+        "title": "Senior Analytics Engineer",
+        "location": "London - The River Building HQ",
+        "url": "",
+        "added_date": "2026-08-31"
+    },
+    {
+        "company": "Monzo",
+        "title": "Senior Analytics Engineer",
+        "location": "Cardiff, London or Remote (UK)",
+        "url": "https://job-boards.greenhouse.io/monzo/jobs/6076740",
+        "added_date": "2026-08-31"
+    },
+    {
+        "company": "Monzo",
+        "title": "Staff Analytics Engineer",
+        "location": "Cardiff, London or Remote (UK)",
+        "url": "https://job-boards.greenhouse.io/monzo/jobs/8013699",
+        "added_date": "2026-08-31"
     }
 ]
