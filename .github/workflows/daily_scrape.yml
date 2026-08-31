@@ -30,8 +30,7 @@ jobs:
       - name: Run Job Scraper
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          # Add any friends' webhooks here
-          FRIEND_A_WEBHOOK_URL: ${{ secrets.FRIEND_A_WEBHOOK_URL }}
+          JENNY_WEBHOOK_URL: ${{ secrets.JENNY_WEBHOOK_URL }}
         run: python daily_job_scraper.py
 
       - name: Commit and push updated artifacts
