@@ -10,12 +10,6 @@ from datetime import datetime
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Keywords to filter the official sponsor list for tech companies
-TECH_KEYWORDS = [
-    'tech', 'software', 'data', 'cloud', 'digital', 'analytic', 
-    'ai', 'machine learning', 'fintech', 'cyber', 'system', 'network'
-]
-
 def load_users():
     """Loads users from users.json."""
     if os.path.exists("users.json"):
@@ -34,8 +28,8 @@ def load_manual_companies():
                 if c: companies.add(c)
     return companies
 
-def fetch_sponsors_and_generate_tenants():
-    print("Fetching the latest UK Register of Licensed Sponsors CSV...")
+def fetch_sponsors_and_generate_tenants(industry_keywords):
+    print(f"Fetching the latest UK Register of Licensed Sponsors CSV and filtering by {len(industry_keywords)} industry keywords...")
     csv_url = "https://assets.publishing.service.gov.uk/media/6a8ff32b5a0c25165ae465cc/SP_-_Worker_and_Temporary_Worker_Web_Register_-_2026-08-27.csv"
     
     try:
@@ -63,14 +57,14 @@ def fetch_sponsors_and_generate_tenants():
                 raw_name = row[0].strip().lower()
                 sponsors.add(raw_name)
                 
-                if any(kw in raw_name for kw in TECH_KEYWORDS):
+                if any(kw in raw_name for kw in industry_keywords):
                     clean_name = raw_name.replace(" ltd", "").replace(" limited", "").replace(" uk", "")
                     clean_name = re.sub(r'[^a-z0-9]', '', clean_name)
                     if len(clean_name) > 3:
                         tenant_ids.add(clean_name)
                         
         print(f"Loaded {len(sponsors)} licensed sponsors.")
-        print(f"Generated {len(tenant_ids)} potential tech ATS tenant IDs.")
+        print(f"Generated {len(tenant_ids)} potential ATS tenant IDs from target industries.")
         return sponsors, tenant_ids
         
     except Exception as e:
@@ -188,7 +182,17 @@ async def main():
         print("No users configured.")
         return
 
-    sponsors, generated_tenants = fetch_sponsors_and_generate_tenants()
+    # Compile a master list of all industry keywords across all users
+    master_keywords = set()
+    for user in users:
+        for kw in user.get("industry_keywords", []):
+            master_keywords.add(kw.lower())
+            
+    # Fallback to tech if empty (to avoid scanning 127k companies and hitting API bans)
+    if not master_keywords:
+        master_keywords = {'tech', 'software', 'data', 'cloud'}
+
+    sponsors, generated_tenants = fetch_sponsors_and_generate_tenants(master_keywords)
     if not sponsors: return
 
     manual_tenants = load_manual_companies()
