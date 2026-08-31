@@ -153,7 +153,8 @@ def send_discord_webhook(jobs, webhook_url):
         }
         
         try:
-            requests.post(webhook_url, json=data, verify=False)
+            resp = requests.post(webhook_url, json=data, verify=False)
+            print(f"Discord response [{job['company']}]: HTTP {resp.status_code} - {resp.text[:200]}")
         except Exception as e:
             print(f"Error sending to Discord: {e}")
 
