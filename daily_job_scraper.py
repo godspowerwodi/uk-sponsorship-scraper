@@ -110,7 +110,8 @@ async def fetch_ashby(session, company):
 
 async def scan_companies(tenant_ids):
     print(f"Scanning {len(tenant_ids)} companies asynchronously...")
-    connector = aiohttp.TCPConnector(limit=50) 
+    # Lowered concurrency from 50 to 20 to prevent Greenhouse API rate-limiting GitHub's IP
+    connector = aiohttp.TCPConnector(limit=20) 
     async with aiohttp.ClientSession(connector=connector) as session:
         tasks = []
         for company in tenant_ids:
@@ -126,7 +127,7 @@ async def scan_companies(tenant_ids):
             job['company'] = company
             all_jobs.append(job)
             
-    print(f"Scanned {len(results)} endpoints. Found {len(all_jobs)} total tech jobs.")
+    print(f"Scanned {len(results)} endpoints. Found {len(all_jobs)} total jobs.")
     return all_jobs
 
 def send_discord_webhook(jobs, webhook_url):
