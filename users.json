@@ -6,7 +6,7 @@
         "target_locations": ["london", "uk", "united kingdom", "remote uk", "uk remote", "hybrid - uk"]
     },
     {
-        "username": "Jenny",
+        "username": "jenny",
         "discord_webhook_env": "https://discord.com/api/webhooks/1543984630468710589/3BMBCn_9MN0jPOMa7xbshzO8Jt3aI0R1tr-s0nIAtN7uhLPqFhbrG7A9heqlnIok80ZM",
         "target_terms": ["Finance", "Finance Analyst", "Branch Manager", "Account Payable", "Account Manager", "Anti Money Laundering", "MLR"],
         "target_locations": ["london", "uk", "united kingdom", "remote uk", "uk remote", "hybrid - uk"]
