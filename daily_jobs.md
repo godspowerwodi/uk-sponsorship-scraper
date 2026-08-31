@@ -15,3 +15,8 @@
 
 - **Valtech**: [Senior Data Engineer](https://job-boards.eu.greenhouse.io/valtech/jobs/4890415101) - *Ukraine - Remote*
 
+## New Jobs Found on 2026-08-31
+
+- **Monzo**: [Senior Analytics Engineer](https://job-boards.greenhouse.io/monzo/jobs/6076740) - *Cardiff, London or Remote (UK)*
+- **Monzo**: [Staff Analytics Engineer](https://job-boards.greenhouse.io/monzo/jobs/8013699) - *Cardiff, London or Remote (UK)*
+
