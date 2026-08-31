@@ -4,7 +4,7 @@
         "discord_webhook_env": "DISCORD_WEBHOOK_URL",
         "target_terms": ["data engineer", "data engineering", "analytics engineer"],
         "target_locations": ["london", "uk", "united kingdom", "remote uk", "uk remote", "hybrid - uk"],
-        "industry_keywords": ["tech", "software", "data", "cloud", "digital", "analytic", "ai", "machine learning", "fintech", "cyber", "system", "network"]
+        "industry_keywords": ["tech", "software", "data", "cloud", "digital", "analytic", "ai", "machine learning", "fintech", "cyber", "system", "network", "telecoms", "telecommunication", "software"]
     },
     {
         "username": "jenny",
