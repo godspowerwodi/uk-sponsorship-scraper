@@ -83,7 +83,7 @@ def is_sponsored(company_name, sponsors_set):
 
 async def fetch_greenhouse(session, company):
     try:
-        async with session.get(f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs", timeout=5, ssl=False) as resp:
+        async with session.get(f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs", timeout=15, ssl=False) as resp:
             if resp.status == 200:
                 data = await resp.json()
                 return company, [{'title': j.get('title',''), 'location': j.get('location',{}).get('name',''), 'url': j.get('absolute_url','')} for j in data.get('jobs', [])]
@@ -92,7 +92,7 @@ async def fetch_greenhouse(session, company):
 
 async def fetch_lever(session, company):
     try:
-        async with session.get(f"https://api.lever.co/v0/postings/{company}", timeout=5, ssl=False) as resp:
+        async with session.get(f"https://api.lever.co/v0/postings/{company}", timeout=15, ssl=False) as resp:
             if resp.status == 200:
                 data = await resp.json()
                 return company, [{'title': j.get('text',''), 'location': j.get('categories',{}).get('location',''), 'url': j.get('hostedUrl','')} for j in data]
@@ -101,7 +101,7 @@ async def fetch_lever(session, company):
 
 async def fetch_ashby(session, company):
     try:
-        async with session.get(f"https://api.ashbyhq.com/posting-api/job-board/{company}", timeout=5, ssl=False) as resp:
+        async with session.get(f"https://api.ashbyhq.com/posting-api/job-board/{company}", timeout=15, ssl=False) as resp:
             if resp.status == 200:
                 data = await resp.json()
                 return company, [{'title': j.get('title',''), 'location': j.get('location',''), 'url': j.get('url','')} for j in data.get('jobs', [])]
@@ -110,14 +110,22 @@ async def fetch_ashby(session, company):
 
 async def scan_companies(tenant_ids):
     print(f"Scanning {len(tenant_ids)} companies asynchronously...")
-    # Lowered concurrency from 50 to 20 to prevent Greenhouse API rate-limiting GitHub's IP
+    
+    # Use a Semaphore to strictly limit active tasks so they don't sit in the connection pool queue and timeout
+    sem = asyncio.Semaphore(20)
+    
+    async def fetch_with_sem(func, session, company):
+        async with sem:
+            return await func(session, company)
+
     connector = aiohttp.TCPConnector(limit=20) 
-    async with aiohttp.ClientSession(connector=connector) as session:
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+    async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
         tasks = []
         for company in tenant_ids:
-            tasks.append(fetch_greenhouse(session, company))
-            tasks.append(fetch_lever(session, company))
-            tasks.append(fetch_ashby(session, company))
+            tasks.append(fetch_with_sem(fetch_greenhouse, session, company))
+            tasks.append(fetch_with_sem(fetch_lever, session, company))
+            tasks.append(fetch_with_sem(fetch_ashby, session, company))
         
         results = await asyncio.gather(*tasks)
         
