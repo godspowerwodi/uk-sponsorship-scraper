@@ -8,7 +8,7 @@
     {
         "username": "jenny",
         "discord_webhook_env": "https://discord.com/api/webhooks/1543984630468710589/3BMBCn_9MN0jPOMa7xbshzO8Jt3aI0R1tr-s0nIAtN7uhLPqFhbrG7A9heqlnIok80ZM",
-        "target_terms": ["Finance", "Finance Analyst", "Branch Manager", "Account Payable", "Account Manager", "Anti Money Laundering", "MLR"],
+        "target_terms": ["Finance", "Finance Analyst", "Branch Manager", "Account Payable", "Account Manager", "Anti Money Laundering", "MLR","Chief Financial Officer","Finance Director","VP of Finance","Finance Manager","Financial Controller","Accounting Manager","Senior Accountant","Staff Accountant","Junior Accountant","Financial Analyst","Senior Financial Analyst","Investment Analyst","Portfolio Manager","Treasury Manager","Treasurer","Risk Manager","Credit Analyst","Compliance Officer","Audit Manager","Internal Auditor","Tax Manager","Tax Accountant","Payroll Manager","FP&A Manager","Budget Analyst","Cost Accountant","Controller","Bookkeeper","Finance Associate","Finance Business Partner","M&A Analyst","Corporate Development Analyst","Asset Manager","Fund Manager","Relationship Manager","Private Equity Analyst","Venture Capital Analyst","Quantitative Analyst","Derivatives Trader","Equity Trader","Fixed Income Trader","Financial Planner","Wealth Manager","Client Services Associate","Operations Analyst","Trade Support Analyst","Collections Manager","Billing Specialist","Revenue Analyst","Billing Analyst","Capital Markets Analyst"],
         "target_locations": ["london", "uk", "united kingdom", "remote uk", "uk remote", "hybrid - uk"]
     }
 ]
