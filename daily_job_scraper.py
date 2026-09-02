@@ -108,6 +108,20 @@ async def fetch_ashby(session, company):
     except: pass
     return company, []
 
+async def fetch_smartrecruiters(session, company):
+    try:
+        async with session.get(f"https://api.smartrecruiters.com/v1/companies/{company}/postings", timeout=15, ssl=False) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                jobs = []
+                for j in data.get('content', []):
+                    loc_name = j.get('location', {}).get('city', '')
+                    url = f"https://jobs.smartrecruiters.com/{company}/{j.get('id')}"
+                    jobs.append({'title': j.get('name',''), 'location': loc_name, 'url': url})
+                return company, jobs
+    except: pass
+    return company, []
+
 async def scan_companies(tenant_ids):
     print(f"Scanning {len(tenant_ids)} companies asynchronously...")
     
@@ -126,6 +140,7 @@ async def scan_companies(tenant_ids):
             tasks.append(fetch_with_sem(fetch_greenhouse, session, company))
             tasks.append(fetch_with_sem(fetch_lever, session, company))
             tasks.append(fetch_with_sem(fetch_ashby, session, company))
+            tasks.append(fetch_with_sem(fetch_smartrecruiters, session, company))
         
         results = await asyncio.gather(*tasks)
         
