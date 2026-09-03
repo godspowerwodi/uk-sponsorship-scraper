@@ -9,8 +9,8 @@
     {
         "username": "jenny",
         "discord_webhook_env": "JENNY_WEBHOOK_URL",
-        "target_terms": ["financial analyst", "quant", "trader", "investment"],
+        "target_terms": ["financial analyst", "quant", "trader", "investment", "analyst",  "compliance", "finance"],
         "target_locations": ["london", "uk", "united kingdom", "hybrid - uk"],
-        "industry_keywords": ["finance", "capital", "bank", "investment", "wealth", "trading", "equity", "asset"]
+        "industry_keywords": ["finance", "capital", "bank", "investment", "wealth", "trading", "equity", "asset", "tech", "money market", "money"]
     }
 ]
