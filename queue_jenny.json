@@ -236,5 +236,33 @@
         "location": "London, United Kingdom",
         "url": "http://block.xyz/careers/jobs/5251731008?gh_jid=5251731008",
         "added_date": "2026-09-03"
+    },
+    {
+        "company": "Wise",
+        "title": "Staff Analyst - Pricing Experience",
+        "location": "London",
+        "url": "https://jobs.smartrecruiters.com/wise/744000147282960",
+        "added_date": "2026-09-03"
+    },
+    {
+        "company": "Wise",
+        "title": "Quantitative Developer (Data Science) - Treasury FX",
+        "location": "London",
+        "url": "https://jobs.smartrecruiters.com/wise/744000147207724",
+        "added_date": "2026-09-03"
+    },
+    {
+        "company": "Wise",
+        "title": "Finance Business Partner Systems (Contractor - Anaplan Model builder)",
+        "location": "London",
+        "url": "https://jobs.smartrecruiters.com/wise/744000147174862",
+        "added_date": "2026-09-03"
+    },
+    {
+        "company": "Affirm",
+        "title": "Compliance Manager",
+        "location": "Remote UK",
+        "url": "https://job-boards.greenhouse.io/affirm/jobs/7850550003",
+        "added_date": "2026-09-03"
     }
 ]
