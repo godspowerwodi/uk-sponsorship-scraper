@@ -1,4 +1,1 @@
-requests
-beautifulsoup4
-aiohttp
-asyncio
+./sponsorship-scout
