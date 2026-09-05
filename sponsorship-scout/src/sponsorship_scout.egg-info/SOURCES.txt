@@ -22,3 +22,4 @@ src/sponsorship_scout/destinations/gist.py
 src/sponsorship_scout/destinations/sqlite.py
 src/sponsorship_scout/ui/__init__.py
 src/sponsorship_scout/ui/app.py
+src/sponsorship_scout/ui/public_app.py

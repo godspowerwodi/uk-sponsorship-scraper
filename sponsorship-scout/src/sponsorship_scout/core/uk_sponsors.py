@@ -1,6 +1,7 @@
 import csv
 import re
 import requests
+import urllib3; urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from bs4 import BeautifulSoup
 from typing import Set, Tuple, List
 
