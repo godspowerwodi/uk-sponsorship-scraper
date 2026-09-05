@@ -4,6 +4,7 @@ import schedule
 import time
 import os
 import subprocess
+import sys
 
 from .core.config import load_config
 from .core.engine import run_engine
@@ -36,7 +37,7 @@ def ui(config: str = "config.yaml"):
     ui_path = os.path.join(os.path.dirname(__file__), "ui", "app.py")
     # Pass config path as an environment variable to streamlit
     os.environ['SPONSOR_SCOUT_CONFIG'] = config
-    subprocess.run(["streamlit", "run", ui_path])
+    subprocess.run([sys.executable, "-m", "streamlit", "run", ui_path])
 
 if __name__ == "__main__":
     app()
