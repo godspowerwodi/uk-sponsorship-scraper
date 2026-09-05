@@ -42,7 +42,8 @@ def process_destinations(jobs: List[Dict], profile: Profile):
         if isinstance(dest, DiscordDestination):
             send_to_discord(jobs, dest.webhook_url)
         elif isinstance(dest, GistDestination):
-            send_to_gist(jobs, dest.gist_id, dest.github_token, f"queue_{profile.name.lower()}.json")
+            safe_name = "".join(c if c.isalnum() else "_" for c in profile.name.lower())
+            send_to_gist(jobs, dest.gist_id, dest.github_token, f"queue_{safe_name}.json")
         elif isinstance(dest, SqliteDestination):
             send_to_sqlite(jobs, dest.table_name)
 
