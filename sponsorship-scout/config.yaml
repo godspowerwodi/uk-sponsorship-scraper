@@ -1,0 +1,8 @@
+profiles:
+  - name: "TestUser"
+    target_terms: ["software", "data"]
+    target_locations: ["london"]
+    industry_keywords: ["tech", "software"]
+    destinations:
+      - type: sqlite
+        table_name: "test_jobs"

@@ -1,0 +1,2 @@
+[console_scripts]
+sponsorship-scout = sponsorship_scout.cli:app
