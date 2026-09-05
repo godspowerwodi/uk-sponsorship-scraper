@@ -70,7 +70,7 @@ with col3:
 st.markdown("<br>", unsafe_allow_html=True)
 btn_col1, btn_col2, btn_col3 = st.columns([1, 2, 1])
 with btn_col2:
-    scan_button = st.button("🚀 Scan for Sponsored Jobs", type="primary", use_container_width=True)
+    scan_button = st.button("🚀 Scan for Sponsored Jobs", type="primary", width="stretch")
 st.divider()
 
 if scan_button:
@@ -117,7 +117,7 @@ if scan_button:
                 
             st.dataframe(
                 df, 
-                use_container_width=True, 
+                width="stretch", 
                 column_config={"url": st.column_config.LinkColumn("Apply Link")},
                 hide_index=True
             )

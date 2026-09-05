@@ -53,7 +53,7 @@ with col1:
     profile_name, table_name = st.selectbox("Select Profile", sqlite_tables, format_func=lambda x: x[0])
 with col2:
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🚀 Run Scraper Now", type="primary", use_container_width=True):
+    if st.button("🚀 Run Scraper Now", type="primary", width="stretch"):
         with st.spinner("Scraping ATS platforms... This may take a couple of minutes."):
             cfg = load_config(config_path)
             # handle asyncio loop correctly like in public_app.py
@@ -107,7 +107,7 @@ try:
         display_df = df[existing_cols]
         st.dataframe(
             display_df, 
-            use_container_width=True,
+            width="stretch",
             column_config={
                 "url": st.column_config.LinkColumn("Apply Link"),
                 "added_date": "Date Added",
