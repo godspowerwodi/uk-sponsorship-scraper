@@ -1,5 +1,5 @@
 <h1 align="center">
-  ?? Sponsorship Scout
+  Sponsorship Scout
 </h1>
 
 <p align="center">
@@ -8,45 +8,44 @@
 
 ![Sponsorship Scout Dashboard](docs/screenshot.png)
 
-## ?? What is it?
-Sponsorship Scout is a robust Python package that dynamically scrapes popular ATS (Applicant Tracking System) platforms (Greenhouse, Lever, Ashby, SmartRecruiters) and cross-references the hiring companies against the **official UK Government Register of Licensed Sponsors**. 
+## What is it?
+Sponsorship Scout is a robust Python package that dynamically scrapes popular ATS (Applicant Tracking System) platforms (Greenhouse, Lever, Ashby, SmartRecruiters, ...more to be added...) and cross-references the hiring companies against the **official UK Government Register of Licensed Sponsors**. 
 
 It guarantees that every job it finds is from a company officially licensed to offer UK Visa Sponsorship.
 
-## ? Features
-- **?? Multi-Tenant:** Configure unlimited profiles for yourself and friends in a single YAML file.
-- **? Async Engine:** Blazing fast concurrent scraping of over 60,000+ endpoints.
-- **??? Gov.uk Validation:** Automatically downloads the latest official UK Sponsor Register to filter companies.
-- **?? Pluggable Destinations:** Send newly found jobs to **Discord**, a **GitHub Gist**, or a **local SQLite database**.
-- **?? Streamlit Dashboards:** Includes a beautiful local dashboard to view your database, and a public-facing ad-hoc search app.
-- **??? Built-in Scheduler:** Run it once, or leave it running continuously in the background.
+## Features
+- **Multi-Tenant:** Configure unlimited profiles for yourself and friends in a single YAML file.
+- **Async Engine:** Blazing fast concurrent scraping of over 60,000+ endpoints.
+- **Gov.uk Validation:** Automatically downloads the latest official UK Sponsor Register to filter companies.
+- **Pluggable Destinations:** Send newly found jobs to **Discord**, a **GitHub Gist**, or a **local SQLite database**.
+- **Streamlit Dashboards:** Includes a beautiful local dashboard to view your database, and a public-facing ad-hoc search app.
+- **Built-in Scheduler:** Run it once, or leave it running continuously in the background.
 
 ---
 
-## ??? Installation
+## Installation
 
 **1. Clone the repository:**
-\\\ash
+bash
 git clone https://github.com/godspowerwodi/uk-sponsorship-scraper.git
 cd uk-sponsorship-scraper
-\\\
 
 **2. Install the package:**
-\\\ash
+bash
 # This installs the package and its dependencies globally
 pip install ./sponsorship-scout
-\\\
+
 
 ---
 
-## ?? Quick Start (Local CLI & Config)
+## Quick Start (Local CLI & Config)
 
 The scraper uses a declarative \config.yaml\ to define profiles and destinations.
 
 ### 1. Create a \config.yaml\
 Create a file named \config.yaml\ in your working directory:
 
-\\\yaml
+yaml
 profiles:
   - name: "Software Engineer"
     target_terms: ["software", "backend", "python"]
@@ -57,12 +56,12 @@ profiles:
         table_name: "software_jobs"
       - type: discord
         webhook_url: "https://discord.com/api/webhooks/..."
-\\\
+
 
 ### 2. Run the CLI
 The \sponsorship-scout\ command is now available in your terminal:
 
-\\\ash
+bash
 # Run a one-off scrape
 sponsorship-scout run --config config.yaml
 
