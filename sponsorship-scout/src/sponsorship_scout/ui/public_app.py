@@ -26,7 +26,7 @@ def run_async(coro):
     else:
         return loop.run_until_complete(coro)
 
-st.set_page_config(page_title="UK Sponsorship Job Scout", layout="wide", page_icon="🇬🇧")
+st.set_page_config(page_title="UK Sponsorship Job Scout", layout="wide", page_icon="💼")
 
 st.markdown("""
 <style>
@@ -50,7 +50,7 @@ div[data-testid="stMetricValue"] {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🇬🇧 UK Sponsorship Job Scout")
+st.title("💼 UK Sponsorship Job Scout")
 st.markdown("Scan for live jobs from UK companies that offer visa sponsorship, straight from ATS platforms.")
 
 st.divider()

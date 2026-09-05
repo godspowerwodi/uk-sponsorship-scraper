@@ -7,7 +7,7 @@ import asyncio
 from sponsorship_scout.core.config import load_config
 from sponsorship_scout.core.engine import run_engine
 
-st.set_page_config(page_title="Sponsorship Scout", layout="wide", page_icon="🇬🇧")
+st.set_page_config(page_title="Sponsorship Scout", layout="wide", page_icon="💼")
 
 st.markdown("""
 <style>
@@ -31,7 +31,7 @@ div[data-testid="stMetricValue"] {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🇬🇧 Sponsorship Scout Dashboard")
+st.title("💼 Sponsorship Scout Dashboard")
 st.markdown("Welcome to your local UK visa sponsorship job tracker. This dashboard visualizes jobs scraped from your configured SQLite destinations.")
 st.divider()
 
