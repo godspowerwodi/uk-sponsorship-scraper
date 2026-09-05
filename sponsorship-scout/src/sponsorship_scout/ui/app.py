@@ -33,6 +33,7 @@ div[data-testid="stMetricValue"] {
 
 st.title("🇬🇧 Sponsorship Scout Dashboard")
 st.markdown("Welcome to your local UK visa sponsorship job tracker. This dashboard visualizes jobs scraped from your configured SQLite destinations.")
+st.divider()
 
 config_path = os.environ.get('SPONSOR_SCOUT_CONFIG', 'config.yaml')
 cfg = load_config(config_path)
@@ -46,20 +47,41 @@ if not sqlite_tables:
     st.warning("No SQLite destinations configured in your profiles. Add one to view jobs here!")
     st.stop()
 
-# Add a sidebar button to run the scraper directly from the UI
-with st.sidebar:
-    st.header("⚙️ Actions")
-    st.markdown("Manually trigger a scan of all profiles in your configuration.")
-    if st.button("🔄 Run Scraper Now", use_container_width=True):
+st.subheader("⚙️ Actions & Filters")
+col1, col2 = st.columns([1, 2])
+with col1:
+    profile_name, table_name = st.selectbox("Select Profile", sqlite_tables, format_func=lambda x: x[0])
+with col2:
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🚀 Run Scraper Now", type="primary", use_container_width=True):
         with st.spinner("Scraping ATS platforms... This may take a couple of minutes."):
             cfg = load_config(config_path)
-            asyncio.run(run_engine(cfg))
+            # handle asyncio loop correctly like in public_app.py
+            def run_async(coro):
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                if loop.is_running():
+                    import threading
+                    result = []
+                    def _run():
+                        new_loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(new_loop)
+                        result.append(new_loop.run_until_complete(coro))
+                    t = threading.Thread(target=_run)
+                    t.start()
+                    t.join()
+                    return result[0]
+                else:
+                    return loop.run_until_complete(coro)
+
+            run_async(run_engine(cfg))
         st.success("Scraping complete! Refreshing data...")
         st.rerun()
-    
-    st.divider()
-    st.subheader("Filter Data")
-    profile_name, table_name = st.selectbox("Select Profile", sqlite_tables, format_func=lambda x: x[0])
+
+st.divider()
 
 try:
     conn = sqlite3.connect('sponsorship_scout.db')
@@ -67,7 +89,7 @@ try:
     conn.close()
     
     if df.empty:
-        st.info("No jobs found in the database yet. Click 'Run Scraper Now' in the sidebar to get started!")
+        st.info("No jobs found in the database yet. Click 'Run Scraper Now' to get started!")
     else:
         # Metrics
         col1, col2, col3 = st.columns(3)
@@ -79,10 +101,12 @@ try:
             latest_date = df['added_date'].max()
             st.metric("Latest Scan", latest_date)
             
-        st.divider()
         st.subheader(f"Latest Jobs for Profile: `{profile_name}`")
+        cols = ['company', 'title', 'location', 'url', 'added_date']
+        existing_cols = [c for c in cols if c in df.columns] + [c for c in df.columns if c not in cols]
+        display_df = df[existing_cols]
         st.dataframe(
-            df[['added_date', 'company', 'title', 'location', 'url']], 
+            display_df, 
             use_container_width=True,
             column_config={
                 "url": st.column_config.LinkColumn("Apply Link"),
@@ -94,4 +118,4 @@ try:
             hide_index=True
         )
 except Exception:
-    st.info("👋 **Welcome to Sponsorship Scout!**\n\nYour database is currently empty because you haven't run a scan yet. Click the **'🔄 Run Scraper Now'** button in the sidebar to fetch your first batch of sponsored jobs!")
+    st.info("👋 **Welcome to Sponsorship Scout!**\n\nYour database is currently empty because you haven't run a scan yet. Click the **'🚀 Run Scraper Now'** button to fetch your first batch of sponsored jobs!")

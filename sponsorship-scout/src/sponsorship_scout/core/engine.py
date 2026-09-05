@@ -76,10 +76,10 @@ async def run_engine(config: Config):
 
         new_jobs = []
         for job in all_jobs:
-            title = job['title'].lower()
-            loc = job['location'].lower()
-            url = job['url']
-            company = job['company']
+            title = str(job.get('title') or '').lower()
+            loc = str(job.get('location') or '').lower()
+            url = job.get('url') or ''
+            company = job.get('company') or ''
             
             matches_title = not profile.target_terms or any(term in title for term in profile.target_terms)
             matches_loc = not profile.target_locations or any(l in loc for l in profile.target_locations)
