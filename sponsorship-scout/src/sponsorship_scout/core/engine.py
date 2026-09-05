@@ -47,6 +47,10 @@ def process_destinations(jobs: List[Dict], profile: Profile):
             send_to_sqlite(jobs, dest.table_name)
 
 async def run_engine(config: Config):
+    if not config.profiles:
+        print("No profiles configured. Exiting.")
+        return
+
     master_keywords = set()
     for profile in config.profiles:
         for kw in profile.industry_keywords:
@@ -77,8 +81,8 @@ async def run_engine(config: Config):
             url = job['url']
             company = job['company']
             
-            matches_title = any(term in title for term in profile.target_terms)
-            matches_loc = any(l in loc for l in profile.target_locations)
+            matches_title = not profile.target_terms or any(term in title for term in profile.target_terms)
+            matches_loc = not profile.target_locations or any(l in loc for l in profile.target_locations)
             
             if matches_title and matches_loc:
                 if is_sponsored(company, sponsors):

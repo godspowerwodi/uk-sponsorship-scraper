@@ -15,18 +15,12 @@ st.title("🇬🇧 Sponsorship Scout Dashboard")
 st.markdown("Welcome to your local UK visa sponsorship job tracker. This dashboard visualizes jobs scraped from your configured SQLite destinations.")
 
 config_path = os.environ.get('SPONSOR_SCOUT_CONFIG', 'config.yaml')
-try:
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = yaml.safe_load(f)
-except Exception as e:
-    st.error(f"Could not load config: {e}")
-    st.stop()
-
+cfg = load_config(config_path)
 sqlite_tables = []
-for profile in config.get('profiles', []):
-    for dest in profile.get('destinations', []):
-        if dest.get('type') == 'sqlite':
-            sqlite_tables.append((profile['name'], dest['table_name']))
+for profile in cfg.profiles:
+    for dest in profile.destinations:
+        if dest.type == 'sqlite':
+            sqlite_tables.append((profile.name, dest.table_name))
 
 if not sqlite_tables:
     st.warning("No SQLite destinations configured in your profiles. Add one to view jobs here!")
