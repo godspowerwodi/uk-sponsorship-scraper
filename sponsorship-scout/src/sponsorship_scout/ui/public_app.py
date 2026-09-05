@@ -26,8 +26,31 @@ def run_async(coro):
     else:
         return loop.run_until_complete(coro)
 
-st.set_page_config(page_title="UK Sponsorship Job Scout", layout="wide", page_icon="🔍")
-st.title("🔍 UK Sponsorship Job Scout")
+st.set_page_config(page_title="UK Sponsorship Job Scout", layout="wide", page_icon="🇬🇧")
+
+st.markdown("""
+<style>
+/* Professional Startup Style */
+.stButton>button {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.stButton>button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+h1, h2, h3 {
+    color: #1E3A8A;
+}
+div[data-testid="stMetricValue"] {
+    color: #2563EB;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🇬🇧 UK Sponsorship Job Scout")
 st.markdown("Scan for live jobs from UK companies that offer visa sponsorship, straight from ATS platforms.")
 
 st.divider()
@@ -45,7 +68,9 @@ with col3:
     industry_keywords = st.text_input("Industry Keywords", "tech, software, data", help="Used to match companies to the UK Gov Sponsor List.")
 
 st.markdown("<br>", unsafe_allow_html=True)
-scan_button = st.button("🚀 Scan for Sponsored Jobs", type="primary", use_container_width=True)
+btn_col1, btn_col2, btn_col3 = st.columns([1, 2, 1])
+with btn_col2:
+    scan_button = st.button("🚀 Scan for Sponsored Jobs", type="primary", use_container_width=True)
 st.divider()
 
 if scan_button:

@@ -11,6 +11,29 @@ from sponsorship_scout.core.config import load_config
 from sponsorship_scout.core.engine import run_engine
 
 st.set_page_config(page_title="Sponsorship Scout", layout="wide", page_icon="🇬🇧")
+
+st.markdown("""
+<style>
+/* Professional Startup Style */
+.stButton>button {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.stButton>button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+h1, h2, h3 {
+    color: #1E3A8A;
+}
+div[data-testid="stMetricValue"] {
+    color: #2563EB;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.title("🇬🇧 Sponsorship Scout Dashboard")
 st.markdown("Welcome to your local UK visa sponsorship job tracker. This dashboard visualizes jobs scraped from your configured SQLite destinations.")
 
