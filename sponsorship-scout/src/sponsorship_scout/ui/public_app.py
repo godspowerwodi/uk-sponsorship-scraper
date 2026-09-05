@@ -26,14 +26,18 @@ def run_async(coro):
     else:
         return loop.run_until_complete(coro)
 
-st.title("UK Sponsorship Job Scout")
-st.write("Scan for live jobs from UK companies that offer visa sponsorship.")
+st.set_page_config(page_title="UK Sponsorship Job Scout", layout="wide", page_icon="🔍")
+st.title("🔍 UK Sponsorship Job Scout")
+st.markdown("Scan for live jobs from UK companies that offer visa sponsorship, straight from ATS platforms.")
 
-job_title = st.text_input("Job Title Keywords (comma-separated)", "Data Engineer")
-location = st.text_input("Location (comma-separated)", "London")
-industry_keywords = st.text_input("Industry Keywords (comma-separated)", "tech, software, data")
+with st.sidebar:
+    st.header("🎯 Search Criteria")
+    job_title = st.text_input("Job Title Keywords", "Data Engineer", help="Comma-separated keywords for job titles.")
+    location = st.text_input("Location", "London", help="Comma-separated locations.")
+    industry_keywords = st.text_input("Industry Keywords", "tech, software, data", help="Used to match companies to the UK Gov Sponsor List.")
+    scan_button = st.button("🚀 Scan for Sponsored Jobs", type="primary", use_container_width=True)
 
-if st.button("Scan for Sponsored Jobs"):
+if scan_button:
     titles = [t.strip().lower() for t in job_title.split(",") if t.strip()]
     locs = [l.strip().lower() for l in location.split(",") if l.strip()]
     industries = set(i.strip().lower() for i in industry_keywords.split(",") if i.strip())
@@ -45,7 +49,7 @@ if st.button("Scan for Sponsored Jobs"):
             st.error("Failed to fetch the UK Gov sponsor list.")
             all_jobs = []
         else:
-            st.info(f"Loaded {len(sponsors)} licensed sponsors and targeting {len(tenant_ids)} ATS tenants.")
+            st.info(f"Loaded **{len(sponsors)}** licensed sponsors and targeting **{len(tenant_ids)}** ATS tenants.")
             all_jobs = run_async(scan_companies(tenant_ids))
             
     if sponsors:
@@ -68,6 +72,18 @@ if st.button("Scan for Sponsored Jobs"):
             cols = ['company', 'title', 'location', 'url', 'added_date']
             existing_cols = [c for c in cols if c in df.columns] + [c for c in df.columns if c not in cols]
             df = df[existing_cols]
-            st.dataframe(df)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Total Sponsored Jobs", len(df))
+            with col2:
+                st.metric("Unique Companies", df['company'].nunique())
+                
+            st.dataframe(
+                df, 
+                use_container_width=True, 
+                column_config={"url": st.column_config.LinkColumn("Apply Link")},
+                hide_index=True
+            )
         else:
             st.warning("No sponsored jobs found matching your criteria.")
