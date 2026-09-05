@@ -67,18 +67,15 @@ sponsorship-scout run --config config.yaml
 
 # Run continuously every 24 hours
 sponsorship-scout start-schedule --config config.yaml --hours 24
-\\\
 
 ### 3. View the Dashboard
 Once the scraper has populated your SQLite database, you can view the jobs in the beautiful local web dashboard:
 
-\\\ash
 sponsorship-scout ui --config config.yaml
-\\\
 
 ---
 
-## ?? Public Cloud App
+## Public Cloud App
 If you want to host an ad-hoc version of this app for the public (without local databases or config files), we provide a standalone \public_app.py\ script.
 
 **To deploy to Streamlit Community Cloud:**
@@ -86,3 +83,5 @@ If you want to host an ad-hoc version of this app for the public (without local 
 2. Connect this repository.
 3. Set the Main file path to: \sponsorship-scout/src/sponsorship_scout/ui/public_app.py\
 4. Deploy! Users can now search for sponsored jobs dynamically from their phones or desktops.
+**We also have a directly hosted version already for those who just want to dive right in**
+(https://uk-sponsorship-scraper.streamlit.app/)
