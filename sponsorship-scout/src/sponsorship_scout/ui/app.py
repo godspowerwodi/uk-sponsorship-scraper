@@ -1,7 +1,10 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+
 import streamlit as st
 import sqlite3
 import pandas as pd
-import os
 import yaml
 import asyncio
 from sponsorship_scout.core.config import load_config
