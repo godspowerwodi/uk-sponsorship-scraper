@@ -30,12 +30,23 @@ st.set_page_config(page_title="UK Sponsorship Job Scout", layout="wide", page_ic
 st.title("🔍 UK Sponsorship Job Scout")
 st.markdown("Scan for live jobs from UK companies that offer visa sponsorship, straight from ATS platforms.")
 
-with st.sidebar:
-    st.header("🎯 Search Criteria")
+st.divider()
+
+# Mobile-friendly Search Inputs (moved out of sidebar so they are immediately visible on small screens)
+st.subheader("🎯 Search Criteria")
+
+# Use columns for a better layout on desktop; on mobile, Streamlit automatically stacks them vertically!
+col1, col2, col3 = st.columns(3)
+with col1:
     job_title = st.text_input("Job Title Keywords", "Data Engineer", help="Comma-separated keywords for job titles.")
+with col2:
     location = st.text_input("Location", "London", help="Comma-separated locations.")
+with col3:
     industry_keywords = st.text_input("Industry Keywords", "tech, software, data", help="Used to match companies to the UK Gov Sponsor List.")
-    scan_button = st.button("🚀 Scan for Sponsored Jobs", type="primary", use_container_width=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+scan_button = st.button("🚀 Scan for Sponsored Jobs", type="primary", use_container_width=True)
+st.divider()
 
 if scan_button:
     titles = [t.strip().lower() for t in job_title.split(",") if t.strip()]
