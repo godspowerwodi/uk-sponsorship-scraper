@@ -112,7 +112,7 @@ async def run_engine(config: Config, search_terms: List[str] = None):
                     is_nhs = True
                 
                 broad_uk_terms = {"uk", "gb", "united kingdom"}
-                user_searched_broad = any(l in broad_uk_terms for l in profile.target_locations)
+                user_searched_broad = any(l.lower() in broad_uk_terms for l in profile.target_locations)
 
                 if is_nhs and user_searched_broad:
                     matches_loc = True
@@ -123,7 +123,7 @@ async def run_engine(config: Config, search_terms: List[str] = None):
                         matches_loc = any(uk_term in loc for uk_term in common_uk_locs)
                     else:
                         from rapidfuzz import fuzz
-                        matches_loc = any(fuzz.partial_ratio(l, loc) > 75 or fuzz.token_set_ratio(l, loc) > 75 for l in profile.target_locations)
+                        matches_loc = any(fuzz.partial_ratio(l.lower(), loc) > 75 or fuzz.token_set_ratio(l.lower(), loc) > 75 for l in profile.target_locations)
             
             if matches_title and matches_loc:
                 if is_sponsored(company, sponsors):
