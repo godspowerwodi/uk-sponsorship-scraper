@@ -100,7 +100,7 @@ async def run_engine(config: Config, search_terms: List[str] = None):
             matches_title = True
             if profile.target_terms:
                 from rapidfuzz import fuzz
-                matches_title = any(fuzz.partial_ratio(term, title) > 75 or fuzz.token_set_ratio(term, title) > 75 for term in profile.target_terms)
+                matches_title = any(fuzz.partial_ratio(term.lower(), title) > 75 or fuzz.token_set_ratio(term.lower(), title) > 75 for term in profile.target_terms)
                 
             matches_loc = True
             if profile.target_locations:
