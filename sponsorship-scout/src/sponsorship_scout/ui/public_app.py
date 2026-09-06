@@ -106,11 +106,26 @@ if scan_button:
                 
             matches_loc = True
             if locs:
-                if any(l in ["uk", "gb", "united kingdom", "remote"] for l in locs):
+                # NHS checks
+                is_nhs = False
+                url_lower = (job.get('url') or '').lower()
+                company_lower = company.lower()
+                if "jobs.nhs.uk" in url_lower or "nhs" in company_lower:
+                    is_nhs = True
+                
+                if is_nhs:
                     matches_loc = True
                 else:
-                    from rapidfuzz import fuzz
-                    matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
+                    broad_uk_terms = {"uk", "gb", "united kingdom"}
+                    common_uk_locs = {"uk", "united kingdom", "london", "england", "scotland", "wales", "gb"}
+                    
+                    user_searched_broad = any(l in broad_uk_terms for l in locs)
+                    
+                    if user_searched_broad:
+                        matches_loc = any(uk_term in loc_lower for uk_term in common_uk_locs)
+                    else:
+                        from rapidfuzz import fuzz
+                        matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
             
             if matches_title and matches_loc:
                 if is_sponsored(company, sponsors):
