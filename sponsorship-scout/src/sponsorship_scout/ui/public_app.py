@@ -93,6 +93,17 @@ if scan_button:
             all_jobs = run_async(scan_companies(tenant_ids, titles))
             
     if sponsors:
+        # Pre-load UK terms if a broad UK search is requested
+        broad_uk_terms = {"uk", "gb", "united kingdom"}
+        user_searched_broad_loc = any(l in broad_uk_terms for l in locs) if locs else False
+        uk_terms = set()
+        if user_searched_broad_loc:
+            import geonamescache
+            gc = geonamescache.GeonamesCache()
+            cities = gc.get_cities()
+            uk_cities = {city['name'].lower() for city in cities.values() if city['countrycode'] == 'GB'}
+            uk_terms = uk_cities.union({"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland"})
+            
         new_jobs = []
         for job in all_jobs:
             title_lower = job.get('title', '').lower()
@@ -116,13 +127,9 @@ if scan_button:
                 if is_nhs:
                     matches_loc = True
                 else:
-                    broad_uk_terms = {"uk", "gb", "united kingdom"}
-                    common_uk_locs = {"uk", "united kingdom", "london", "england", "scotland", "wales", "gb"}
-                    
-                    user_searched_broad = any(l in broad_uk_terms for l in locs)
-                    
-                    if user_searched_broad:
-                        matches_loc = any(uk_term in loc_lower for uk_term in common_uk_locs)
+                    if user_searched_broad_loc:
+                        loc_parts = set(loc_lower.replace(',', ' ').split())
+                        matches_loc = bool(loc_parts.intersection(uk_terms))
                     else:
                         from rapidfuzz import fuzz
                         matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
