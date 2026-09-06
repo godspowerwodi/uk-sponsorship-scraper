@@ -106,31 +106,51 @@ if scan_button:
                 
             matches_loc = True
             if locs:
-                from rapidfuzz import fuzz
-                matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
+                if any(l in ["uk", "gb", "united kingdom", "remote"] for l in locs):
+                    matches_loc = True
+                else:
+                    from rapidfuzz import fuzz
+                    matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
             
             if matches_title and matches_loc:
                 if is_sponsored(company, sponsors):
                     new_jobs.append(job)
         
         if new_jobs:
-            st.success(f"Found {len(new_jobs)} sponsored jobs!")
-            df = pd.DataFrame(new_jobs)
-            cols = ['company', 'title', 'location', 'url', 'added_date']
-            existing_cols = [c for c in cols if c in df.columns] + [c for c in df.columns if c not in cols]
-            df = df[existing_cols]
+            exact_matches = []
+            broader_matches = []
+            for job in new_jobs:
+                title_lower = job.get('title', '').lower()
+                is_exact = any(term in title_lower for term in titles) if titles else True
+                if is_exact:
+                    exact_matches.append(job)
+                else:
+                    broader_matches.append(job)
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("Total Sponsored Jobs", len(df))
-            with col2:
-                st.metric("Unique Companies", df['company'].nunique())
+            if exact_matches:
+                st.success(f"Found {len(exact_matches)} exact matches!")
+                import pandas as pd
+                df_exact = pd.DataFrame(exact_matches)
+                cols = ['company', 'title', 'location', 'url', 'added_date']
+                df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols]]
                 
-            st.dataframe(
-                df, 
-                width="stretch", 
-                column_config={"url": st.column_config.LinkColumn("Apply Link")},
-                hide_index=True
-            )
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Total Exact Matches", len(df_exact))
+                with col2:
+                    st.metric("Unique Companies", df_exact['company'].nunique())
+                    
+                st.dataframe(df_exact, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link")}, hide_index=True)
+            else:
+                st.warning("We couldn't find an exact match for your search, but here are other roles like it:")
+                
+            if broader_matches:
+                if exact_matches:
+                    st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
+                import pandas as pd
+                df_broad = pd.DataFrame(broader_matches)
+                cols = ['company', 'title', 'location', 'url', 'added_date']
+                df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols]]
+                st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link")}, hide_index=True)
         else:
             st.warning("No sponsored jobs found matching your criteria.")
