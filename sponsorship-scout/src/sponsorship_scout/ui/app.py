@@ -59,28 +59,36 @@ with col2:
     if st.button("🚀 Run Scraper Now", type="primary", width="stretch"):
         with st.spinner("Scraping ATS platforms... This may take a couple of minutes."):
             cfg = load_config(config_path)
+            # extract target_terms to pass directly
+            target_terms = set()
+            for p in cfg.profiles:
+                if p.target_terms:
+                    for t in p.target_terms:
+                        target_terms.add(t.lower())
+            
             # handle asyncio loop correctly like in public_app.py
             def run_async(coro):
                 try:
-                    loop = asyncio.get_event_loop()
+                    loop = asyncio.get_running_loop()
                 except RuntimeError:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                if loop.is_running():
+                    loop = None
+                
+                if loop and loop.is_running():
                     import threading
                     result = []
                     def _run():
                         new_loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(new_loop)
                         result.append(new_loop.run_until_complete(coro))
+                        new_loop.close()
                     t = threading.Thread(target=_run)
                     t.start()
                     t.join()
                     return result[0]
                 else:
-                    return loop.run_until_complete(coro)
+                    return asyncio.run(coro)
 
-            run_async(run_engine(cfg))
+            run_async(run_engine(cfg, list(target_terms)))
         st.success("Scraping complete! Refreshing data...")
         st.rerun()
 

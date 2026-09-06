@@ -10,12 +10,11 @@ from sponsorship_scout.core.engine import scan_companies
 
 def run_async(coro):
     try:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
     except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        loop = None
     
-    if loop.is_running():
+    if loop and loop.is_running():
         # Fallback for when an event loop is already running in this thread
         import threading
         result = []
@@ -23,12 +22,13 @@ def run_async(coro):
             new_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(new_loop)
             result.append(new_loop.run_until_complete(coro))
+            new_loop.close()
         t = threading.Thread(target=_run)
         t.start()
         t.join()
         return result[0]
     else:
-        return loop.run_until_complete(coro)
+        return asyncio.run(coro)
 
 st.set_page_config(page_title="UK Sponsorship Job Scout", layout="wide", page_icon="💼")
 
