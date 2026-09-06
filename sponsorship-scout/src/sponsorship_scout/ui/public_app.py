@@ -62,6 +62,15 @@ st.divider()
 # Mobile-friendly Search Inputs (moved out of sidebar so they are immediately visible on small screens)
 st.subheader("🎯 Search Criteria")
 
+with st.expander("ℹ️ How to use this search", expanded=True):
+    st.markdown("""
+    **Welcome! Here's how to fill out the search fields:**
+    
+    * **Job Title Keywords:** Enter comma-separated keywords for the roles you want (e.g., `Data Engineer, Software Developer, Python`). The search is flexible and will find similar titles.
+    * **Location:** Enter your target cities or regions, separated by commas (e.g., `London, Manchester`). You can also just enter `UK` for nationwide searches.
+    * **Industry Keywords:** Used to filter the official UK Government Sponsor List to relevant companies before we scan their job boards. If you're looking for tech jobs, use `tech, software, data`.
+    """)
+
 # Use columns for a better layout on desktop; on mobile, Streamlit automatically stacks them vertically!
 col1, col2, col3 = st.columns(3)
 with col1:
