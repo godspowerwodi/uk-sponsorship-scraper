@@ -1,3 +1,4 @@
+import asyncio
 import aiohttp
 from typing import List, Tuple, Dict
 import urllib.parse
@@ -39,26 +40,26 @@ async def fetch_tracjobs(session: aiohttp.ClientSession, search_terms: List[str]
         return "TracJobs", []
         
     jobs = []
-    for term in search_terms:
+    
+    async def fetch_page(term: str, page: int):
         encoded_term = urllib.parse.quote(term)
+        url = f"https://www.jobs.nhs.uk/candidate/search/results?keyword={encoded_term}&page={page}"
+        try:
+            async with session.get(url, timeout=15, ssl=False) as resp:
+                if resp.status == 200:
+                    text = await resp.text()
+                    return _parse_tracjobs_html(text)
+        except Exception:
+            pass
+        return []
+
+    for term in search_terms:
+        tasks = [fetch_page(term, page) for page in range(1, 21)]
+        results = await asyncio.gather(*tasks)
         
-        for page in range(1, 21):
-            url = f"https://www.jobs.nhs.uk/candidate/search/results?keyword={encoded_term}&page={page}"
-            try:
-                # The task requested `verify=False`, which in aiohttp translates to `ssl=False`
-                async with session.get(url, timeout=15, ssl=False) as resp:
-                    if resp.status == 200:
-                        text = await resp.text()
-                        parsed = _parse_tracjobs_html(text)
-                        if not parsed:
-                            break
-                        jobs.extend(parsed)
-                        
-            except Exception:
-                pass
-                
-            if len(jobs) >= 200:
-                break
+        for parsed in results:
+            if parsed:
+                jobs.extend(parsed)
                 
         if len(jobs) >= 200:
             break
