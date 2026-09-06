@@ -36,7 +36,7 @@ async def scan_companies(tenant_ids: Set[str], search_terms: List[str] = None) -
     all_jobs = []
     for company, jobs in results:
         for job in jobs:
-            job['company'] = company
+            job['company'] = job.get('company') or company
             job['added_date'] = datetime.now().strftime('%Y-%m-%d')
             all_jobs.append(job)
             
@@ -100,12 +100,30 @@ async def run_engine(config: Config, search_terms: List[str] = None):
             matches_title = True
             if profile.target_terms:
                 from rapidfuzz import fuzz
-                matches_title = any(fuzz.partial_ratio(term, title) > 75 or fuzz.token_set_ratio(term, title) > 75 for term in profile.target_terms)
+                matches_title = any(fuzz.partial_ratio(term.lower(), title) > 75 or fuzz.token_set_ratio(term.lower(), title) > 75 for term in profile.target_terms)
                 
             matches_loc = True
             if profile.target_locations:
-                from rapidfuzz import fuzz
-                matches_loc = any(fuzz.partial_ratio(l, loc) > 75 or fuzz.token_set_ratio(l, loc) > 75 for l in profile.target_locations)
+                # NHS checks
+                is_nhs = False
+                url_lower = (job.get('url') or '').lower()
+                company_lower = company.lower()
+                if "jobs.nhs.uk" in url_lower or "nhs" in company_lower:
+                    is_nhs = True
+                
+                broad_uk_terms = {"uk", "gb", "united kingdom"}
+                user_searched_broad = any(l.lower() in broad_uk_terms for l in profile.target_locations)
+
+                if is_nhs and user_searched_broad:
+                    matches_loc = True
+                else:
+                    common_uk_locs = {"uk", "united kingdom", "london", "england", "scotland", "wales", "gb"}
+                    
+                    if user_searched_broad:
+                        matches_loc = any(uk_term in loc for uk_term in common_uk_locs)
+                    else:
+                        from rapidfuzz import fuzz
+                        matches_loc = any(fuzz.partial_ratio(l.lower(), loc) > 75 or fuzz.token_set_ratio(l.lower(), loc) > 75 for l in profile.target_locations)
             
             if matches_title and matches_loc:
                 if is_sponsored(company, sponsors):

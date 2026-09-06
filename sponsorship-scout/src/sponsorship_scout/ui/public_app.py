@@ -62,6 +62,15 @@ st.divider()
 # Mobile-friendly Search Inputs (moved out of sidebar so they are immediately visible on small screens)
 st.subheader("🎯 Search Criteria")
 
+with st.expander("ℹ️ How to use this search", expanded=True):
+    st.markdown("""
+    **Welcome! Here's how to fill out the search fields:**
+    
+    * **Job Title Keywords:** Enter comma-separated keywords for the roles you want (e.g., `Data Engineer, Software Developer, Python, Machine Learning Engineer, Carer, Doctor, Nurse`). The search is flexible and will find similar titles.
+    * **Location:** Enter your target cities or regions, separated by commas (e.g., `London, Manchester, Bristol`). You can also just enter `UK` for nationwide searches.
+    * **Industry Keywords:** Used to filter the official UK Government Sponsor List to relevant companies before we scan their job boards. If you're looking for tech jobs for instance, use `tech, software, data, technology, ai`, for healthcare jobs, use `healthcare, health, care, nhs`.
+    """)
+
 # Use columns for a better layout on desktop; on mobile, Streamlit automatically stacks them vertically!
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -93,11 +102,22 @@ if scan_button:
             all_jobs = run_async(scan_companies(tenant_ids, titles))
             
     if sponsors:
+        # Pre-load UK terms if a broad UK search is requested
+        broad_uk_terms = {"uk", "gb", "united kingdom"}
+        user_searched_broad_loc = any(l in broad_uk_terms for l in locs) if locs else False
+        uk_terms = set()
+        if user_searched_broad_loc:
+            import geonamescache
+            gc = geonamescache.GeonamesCache()
+            cities = gc.get_cities()
+            uk_cities = {city['name'].lower() for city in cities.values() if city['countrycode'] == 'GB'}
+            uk_terms = uk_cities.union({"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland"})
+            
         new_jobs = []
         for job in all_jobs:
-            title_lower = job.get('title', '').lower()
-            loc_lower = job.get('location', '').lower()
-            company = job.get('company', '')
+            title_lower = str(job.get('title') or '').lower()
+            loc_lower = str(job.get('location') or '').lower()
+            company = str(job.get('company') or '')
             
             matches_title = True
             if titles:
@@ -106,31 +126,61 @@ if scan_button:
                 
             matches_loc = True
             if locs:
-                from rapidfuzz import fuzz
-                matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
+                # NHS checks
+                is_nhs = False
+                url_lower = (job.get('url') or '').lower()
+                company_lower = company.lower()
+                if "jobs.nhs.uk" in url_lower or "nhs" in company_lower:
+                    is_nhs = True
+                
+                if is_nhs and user_searched_broad_loc:
+                    matches_loc = True
+                else:
+                    if user_searched_broad_loc:
+                        matches_loc = any(uk_term in loc_lower for uk_term in uk_terms)
+                    else:
+                        from rapidfuzz import fuzz
+                        matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
             
             if matches_title and matches_loc:
                 if is_sponsored(company, sponsors):
                     new_jobs.append(job)
         
         if new_jobs:
-            st.success(f"Found {len(new_jobs)} sponsored jobs!")
-            df = pd.DataFrame(new_jobs)
-            cols = ['company', 'title', 'location', 'url', 'added_date']
-            existing_cols = [c for c in cols if c in df.columns] + [c for c in df.columns if c not in cols]
-            df = df[existing_cols]
+            exact_matches = []
+            broader_matches = []
+            for job in new_jobs:
+                title_lower = str(job.get('title') or '').lower()
+                is_exact = any(term in title_lower for term in titles) if titles else True
+                if is_exact:
+                    exact_matches.append(job)
+                else:
+                    broader_matches.append(job)
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("Total Sponsored Jobs", len(df))
-            with col2:
-                st.metric("Unique Companies", df['company'].nunique())
+            if exact_matches:
+                st.success(f"Found {len(exact_matches)} exact matches!")
+                import pandas as pd
+                df_exact = pd.DataFrame(exact_matches)
+                cols = ['company', 'title', 'location', 'url', 'added_date']
+                df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols]]
                 
-            st.dataframe(
-                df, 
-                width="stretch", 
-                column_config={"url": st.column_config.LinkColumn("Apply Link")},
-                hide_index=True
-            )
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Total Exact Matches", len(df_exact))
+                with col2:
+                    st.metric("Unique Companies", df_exact['company'].nunique())
+                    
+                st.dataframe(df_exact, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link")}, hide_index=True)
+            else:
+                st.warning("We couldn't find an exact match for your search, but here are other roles like it:")
+                
+            if broader_matches:
+                if exact_matches:
+                    st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
+                import pandas as pd
+                df_broad = pd.DataFrame(broader_matches)
+                cols = ['company', 'title', 'location', 'url', 'added_date']
+                df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols]]
+                st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link")}, hide_index=True)
         else:
             st.warning("No sponsored jobs found matching your criteria.")
