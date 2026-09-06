@@ -117,10 +117,11 @@ async def run_engine(config: Config, search_terms: List[str] = None):
                 if is_nhs and user_searched_broad:
                     matches_loc = True
                 else:
-                    common_uk_locs = {"uk", "united kingdom", "london", "england", "scotland", "wales", "gb"}
+                    common_uk_locs = {"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland", "london", "manchester", "birmingham", "leeds", "glasgow", "liverpool", "newcastle", "sheffield", "belfast", "bristol", "edinburgh", "cardiff"}
                     
                     if user_searched_broad:
-                        matches_loc = any(uk_term in loc for uk_term in common_uk_locs)
+                        import re
+                        matches_loc = any(re.search(r'\b' + re.escape(uk_term) + r'\b', loc) for uk_term in common_uk_locs)
                     else:
                         from rapidfuzz import fuzz
                         matches_loc = any(fuzz.partial_ratio(l.lower(), loc) > 75 or fuzz.token_set_ratio(l.lower(), loc) > 75 for l in profile.target_locations)

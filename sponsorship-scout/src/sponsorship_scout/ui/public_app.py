@@ -107,15 +107,7 @@ if scan_button:
         user_searched_broad_loc = any(l in broad_uk_terms for l in locs) if locs else False
         uk_terms = set()
         if user_searched_broad_loc:
-            try:
-                import geonamescache
-                gc = geonamescache.GeonamesCache()
-                cities = gc.get_cities()
-                uk_cities = {city['name'].lower() for city in cities.values() if city['countrycode'] == 'GB'}
-                uk_terms = uk_cities.union({"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland"})
-            except ImportError:
-                # Fallback if Streamlit Cloud refuses to install geonamescache
-                uk_terms = {"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland", "london", "manchester", "birmingham", "leeds", "glasgow", "southampton", "liverpool", "newcastle"}
+            uk_terms = {"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland", "london", "manchester", "birmingham", "leeds", "glasgow", "liverpool", "newcastle", "sheffield", "belfast", "bristol", "edinburgh", "cardiff"}
 
             
         new_jobs = []
@@ -142,7 +134,8 @@ if scan_button:
                     matches_loc = True
                 else:
                     if user_searched_broad_loc:
-                        matches_loc = any(uk_term in loc_lower for uk_term in uk_terms)
+                        import re
+                        matches_loc = any(re.search(r'\b' + re.escape(uk_term) + r'\b', loc_lower) for uk_term in uk_terms)
                     else:
                         from rapidfuzz import fuzz
                         matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
