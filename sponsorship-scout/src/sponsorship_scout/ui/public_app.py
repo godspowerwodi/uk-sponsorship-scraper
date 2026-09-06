@@ -124,7 +124,7 @@ if scan_button:
                 if "jobs.nhs.uk" in url_lower or "nhs" in company_lower:
                     is_nhs = True
                 
-                if is_nhs:
+                if is_nhs and user_searched_broad_loc:
                     matches_loc = True
                 else:
                     if user_searched_broad_loc:

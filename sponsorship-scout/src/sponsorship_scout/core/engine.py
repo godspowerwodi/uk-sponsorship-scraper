@@ -111,13 +111,13 @@ async def run_engine(config: Config, search_terms: List[str] = None):
                 if "jobs.nhs.uk" in url_lower or "nhs" in company_lower:
                     is_nhs = True
                 
-                if is_nhs:
+                broad_uk_terms = {"uk", "gb", "united kingdom"}
+                user_searched_broad = any(l in broad_uk_terms for l in profile.target_locations)
+
+                if is_nhs and user_searched_broad:
                     matches_loc = True
                 else:
-                    broad_uk_terms = {"uk", "gb", "united kingdom"}
                     common_uk_locs = {"uk", "united kingdom", "london", "england", "scotland", "wales", "gb"}
-                    
-                    user_searched_broad = any(l in broad_uk_terms for l in profile.target_locations)
                     
                     if user_searched_broad:
                         matches_loc = any(uk_term in loc for uk_term in common_uk_locs)
