@@ -115,9 +115,9 @@ if scan_button:
             
         new_jobs = []
         for job in all_jobs:
-            title_lower = job.get('title', '').lower()
-            loc_lower = job.get('location', '').lower()
-            company = job.get('company', '')
+            title_lower = str(job.get('title') or '').lower()
+            loc_lower = str(job.get('location') or '').lower()
+            company = str(job.get('company') or '')
             
             matches_title = True
             if titles:
@@ -137,8 +137,7 @@ if scan_button:
                     matches_loc = True
                 else:
                     if user_searched_broad_loc:
-                        loc_parts = set(loc_lower.replace(',', ' ').split())
-                        matches_loc = bool(loc_parts.intersection(uk_terms))
+                        matches_loc = any(uk_term in loc_lower for uk_term in uk_terms)
                     else:
                         from rapidfuzz import fuzz
                         matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
@@ -151,7 +150,7 @@ if scan_button:
             exact_matches = []
             broader_matches = []
             for job in new_jobs:
-                title_lower = job.get('title', '').lower()
+                title_lower = str(job.get('title') or '').lower()
                 is_exact = any(term in title_lower for term in titles) if titles else True
                 if is_exact:
                     exact_matches.append(job)
