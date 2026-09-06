@@ -16,12 +16,14 @@ def run(config: str = "config.yaml"):
     """Run the scraper once."""
     abs_config = os.path.abspath(config)
     cfg = load_config(abs_config)
-    asyncio.run(run_engine(cfg))
+    target_terms = set(t.lower() for p in cfg.profiles if p.target_terms for t in p.target_terms)
+    asyncio.run(run_engine(cfg, list(target_terms)))
 
 def run_job(config_path: str):
     print("Running scheduled scrape...")
     cfg = load_config(os.path.abspath(config_path))
-    asyncio.run(run_engine(cfg))
+    target_terms = set(t.lower() for p in cfg.profiles if p.target_terms for t in p.target_terms)
+    asyncio.run(run_engine(cfg, list(target_terms)))
 
 @app.command()
 def start_schedule(config: str = "config.yaml", hours: int = 24):

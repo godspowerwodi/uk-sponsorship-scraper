@@ -53,19 +53,15 @@ def process_destinations(jobs: List[Dict], profile: Profile):
         elif isinstance(dest, SqliteDestination):
             send_to_sqlite(jobs, dest.table_name)
 
-async def run_engine(config: Config):
+async def run_engine(config: Config, search_terms: List[str] = None):
     if not config.profiles:
         print("No profiles configured. Exiting.")
         return
 
     master_keywords = set()
-    master_target_terms = set()
     for profile in config.profiles:
         for kw in profile.industry_keywords:
             master_keywords.add(kw.lower())
-        if profile.target_terms:
-            for term in profile.target_terms:
-                master_target_terms.add(term.lower())
             
     if not master_keywords:
         master_keywords = {'tech', 'software', 'data', 'cloud'}
@@ -73,7 +69,16 @@ async def run_engine(config: Config):
     sponsors, tenant_ids = fetch_sponsors_and_generate_tenants(master_keywords)
     if not sponsors: return
     
-    all_jobs = await scan_companies(tenant_ids, list(master_target_terms))
+    # If search_terms not passed directly, try getting them from profiles
+    if not search_terms:
+        master_target_terms = set()
+        for profile in config.profiles:
+            if profile.target_terms:
+                for term in profile.target_terms:
+                    master_target_terms.add(term.lower())
+        search_terms = list(master_target_terms)
+
+    all_jobs = await scan_companies(tenant_ids, search_terms)
     
     for profile in config.profiles:
         print(f"--- Processing jobs for user: {profile.name} ---")
