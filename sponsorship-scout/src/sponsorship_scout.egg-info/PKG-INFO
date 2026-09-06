@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sponsorship-scout
-Version: 0.1.0
+Version: 0.1.2
 Summary: Multi-tenant UK Sponsorship Job Scraper
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown

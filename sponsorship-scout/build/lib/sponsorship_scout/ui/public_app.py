@@ -1,7 +1,3 @@
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-
 import streamlit as st
 import asyncio
 import pandas as pd
@@ -90,7 +86,7 @@ if scan_button:
             all_jobs = []
         else:
             st.info(f"Loaded **{len(sponsors)}** licensed sponsors and targeting **{len(tenant_ids)}** ATS tenants.")
-            all_jobs = run_async(scan_companies(tenant_ids, titles))
+            all_jobs = run_async(scan_companies(tenant_ids))
             
     if sponsors:
         new_jobs = []

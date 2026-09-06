@@ -42,11 +42,16 @@ def process_destinations(jobs: List[Dict], profile: Profile):
         if isinstance(dest, DiscordDestination):
             send_to_discord(jobs, dest.webhook_url)
         elif isinstance(dest, GistDestination):
-            send_to_gist(jobs, dest.gist_id, dest.github_token, f"queue_{profile.name.lower()}.json")
+            safe_name = "".join(c if c.isalnum() else "_" for c in profile.name.lower())
+            send_to_gist(jobs, dest.gist_id, dest.github_token, f"queue_{safe_name}.json")
         elif isinstance(dest, SqliteDestination):
             send_to_sqlite(jobs, dest.table_name)
 
 async def run_engine(config: Config):
+    if not config.profiles:
+        print("No profiles configured. Exiting.")
+        return
+
     master_keywords = set()
     for profile in config.profiles:
         for kw in profile.industry_keywords:
@@ -72,13 +77,13 @@ async def run_engine(config: Config):
 
         new_jobs = []
         for job in all_jobs:
-            title = job['title'].lower()
-            loc = job['location'].lower()
-            url = job['url']
-            company = job['company']
+            title = str(job.get('title') or '').lower()
+            loc = str(job.get('location') or '').lower()
+            url = job.get('url') or ''
+            company = job.get('company') or ''
             
-            matches_title = any(term in title for term in profile.target_terms)
-            matches_loc = any(l in loc for l in profile.target_locations)
+            matches_title = not profile.target_terms or any(term in title for term in profile.target_terms)
+            matches_loc = not profile.target_locations or any(l in loc for l in profile.target_locations)
             
             if matches_title and matches_loc:
                 if is_sponsored(company, sponsors):

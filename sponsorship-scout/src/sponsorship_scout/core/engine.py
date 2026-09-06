@@ -7,24 +7,30 @@ from typing import List, Dict, Set
 
 from .config import Config, Profile, DestinationType, DiscordDestination, GistDestination, SqliteDestination
 from .uk_sponsors import fetch_sponsors_and_generate_tenants, is_sponsored
-from ..ats import ALL_SCRAPERS
+from ..ats import TENANT_SCRAPERS, CENTRALIZED_SCRAPERS
 from ..destinations import send_to_discord, send_to_gist, send_to_sqlite
 
-async def fetch_with_sem(func, session, company, sem):
+async def fetch_with_sem(func, session, arg, sem):
     async with sem:
-        return await func(session, company)
+        return await func(session, arg)
 
-async def scan_companies(tenant_ids: Set[str]) -> List[Dict]:
-    print(f"Scanning {len(tenant_ids)} companies asynchronously across {len(ALL_SCRAPERS)} ATS platforms...")
-    sem = asyncio.Semaphore(20)
-    connector = aiohttp.TCPConnector(limit=20) 
+async def scan_companies(tenant_ids: Set[str], search_terms: List[str] = None) -> List[Dict]:
+    search_terms = search_terms or []
+    print(f"Scanning {len(tenant_ids)} companies asynchronously across {len(TENANT_SCRAPERS)} ATS platforms and {len(CENTRALIZED_SCRAPERS)} centralized scrapers...")
+    sem = asyncio.Semaphore(150)
+    connector = aiohttp.TCPConnector(limit=150) 
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
     async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
         tasks = []
         for company in tenant_ids:
-            for scraper in ALL_SCRAPERS:
+            for scraper in TENANT_SCRAPERS:
                 tasks.append(fetch_with_sem(scraper, session, company, sem))
+        
+        if search_terms:
+            for scraper in CENTRALIZED_SCRAPERS:
+                tasks.append(fetch_with_sem(scraper, session, search_terms, sem))
+                
         results = await asyncio.gather(*tasks)
         
     all_jobs = []
@@ -34,7 +40,7 @@ async def scan_companies(tenant_ids: Set[str]) -> List[Dict]:
             job['added_date'] = datetime.now().strftime('%Y-%m-%d')
             all_jobs.append(job)
             
-    print(f"Scanned {len(results)} endpoints. Found {len(all_jobs)} total jobs.")
+    print(f"Scanned endpoints. Found {len(all_jobs)} total jobs.")
     return all_jobs
 
 def process_destinations(jobs: List[Dict], profile: Profile):
@@ -53,9 +59,13 @@ async def run_engine(config: Config):
         return
 
     master_keywords = set()
+    master_target_terms = set()
     for profile in config.profiles:
         for kw in profile.industry_keywords:
             master_keywords.add(kw.lower())
+        if profile.target_terms:
+            for term in profile.target_terms:
+                master_target_terms.add(term.lower())
             
     if not master_keywords:
         master_keywords = {'tech', 'software', 'data', 'cloud'}
@@ -63,7 +73,7 @@ async def run_engine(config: Config):
     sponsors, tenant_ids = fetch_sponsors_and_generate_tenants(master_keywords)
     if not sponsors: return
     
-    all_jobs = await scan_companies(tenant_ids)
+    all_jobs = await scan_companies(tenant_ids, list(master_target_terms))
     
     for profile in config.profiles:
         print(f"--- Processing jobs for user: {profile.name} ---")
