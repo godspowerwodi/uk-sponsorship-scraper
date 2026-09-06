@@ -36,7 +36,7 @@ async def scan_companies(tenant_ids: Set[str], search_terms: List[str] = None) -
     all_jobs = []
     for company, jobs in results:
         for job in jobs:
-            job['company'] = company
+            job['company'] = job.get('company') or company
             job['added_date'] = datetime.now().strftime('%Y-%m-%d')
             all_jobs.append(job)
             
