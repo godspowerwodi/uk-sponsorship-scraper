@@ -61,4 +61,16 @@ def is_sponsored(company_name: str, sponsors_set: Set[str]) -> bool:
         if company_norm in s or s in company_norm:
             if len(company_norm) > 4 and len(s) > 4:
                 return True
+                
+    # Fuzzy matching for robustness (e.g. slight naming variations)
+    from rapidfuzz import process, fuzz
+    match = process.extractOne(
+        company_norm, 
+        sponsors_set, 
+        scorer=fuzz.token_set_ratio, 
+        score_cutoff=85
+    )
+    if match:
+        return True
+        
     return False

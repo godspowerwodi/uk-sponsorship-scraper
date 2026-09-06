@@ -99,8 +99,15 @@ if scan_button:
             loc_lower = job.get('location', '').lower()
             company = job.get('company', '')
             
-            matches_title = any(term in title_lower for term in titles) if titles else True
-            matches_loc = any(l in loc_lower for l in locs) if locs else True
+            matches_title = True
+            if titles:
+                from rapidfuzz import fuzz
+                matches_title = any(fuzz.partial_ratio(term, title_lower) > 75 or fuzz.token_set_ratio(term, title_lower) > 75 for term in titles)
+                
+            matches_loc = True
+            if locs:
+                from rapidfuzz import fuzz
+                matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
             
             if matches_title and matches_loc:
                 if is_sponsored(company, sponsors):

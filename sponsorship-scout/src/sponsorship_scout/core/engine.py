@@ -97,8 +97,15 @@ async def run_engine(config: Config, search_terms: List[str] = None):
             url = job.get('url') or ''
             company = job.get('company') or ''
             
-            matches_title = not profile.target_terms or any(term in title for term in profile.target_terms)
-            matches_loc = not profile.target_locations or any(l in loc for l in profile.target_locations)
+            matches_title = True
+            if profile.target_terms:
+                from rapidfuzz import fuzz
+                matches_title = any(fuzz.partial_ratio(term, title) > 75 or fuzz.token_set_ratio(term, title) > 75 for term in profile.target_terms)
+                
+            matches_loc = True
+            if profile.target_locations:
+                from rapidfuzz import fuzz
+                matches_loc = any(fuzz.partial_ratio(l, loc) > 75 or fuzz.token_set_ratio(l, loc) > 75 for l in profile.target_locations)
             
             if matches_title and matches_loc:
                 if is_sponsored(company, sponsors):

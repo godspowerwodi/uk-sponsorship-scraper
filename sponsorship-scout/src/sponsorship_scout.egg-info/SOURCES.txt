@@ -12,6 +12,8 @@ src/sponsorship_scout/ats/ashby.py
 src/sponsorship_scout/ats/greenhouse.py
 src/sponsorship_scout/ats/lever.py
 src/sponsorship_scout/ats/smartrecruiters.py
+src/sponsorship_scout/ats/test_trac.py
+src/sponsorship_scout/ats/tracjobs.py
 src/sponsorship_scout/core/__init__.py
 src/sponsorship_scout/core/config.py
 src/sponsorship_scout/core/engine.py
