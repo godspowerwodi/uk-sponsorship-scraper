@@ -106,15 +106,16 @@ if scan_button:
         broad_uk_terms = {"uk", "gb", "united kingdom"}
         user_searched_broad_loc = any(l in broad_uk_terms for l in locs) if locs else False
         uk_terms = set()
-        if user_searched_broad_loc:        try:
-            import geonamescache
-            gc = geonamescache.GeonamesCache()
-            cities = gc.get_cities()
-            uk_cities = {city['name'].lower() for city in cities.values() if city['countrycode'] == 'GB'}
-            uk_terms = uk_cities.union({"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland"})
-        except ImportError:
-            # Fallback if Streamlit Cloud refuses to install geonamescache
-            uk_terms = {"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland", "london", "manchester", "birmingham", "leeds", "glasgow", "southampton", "liverpool", "newcastle"}
+        if user_searched_broad_loc:
+            try:
+                import geonamescache
+                gc = geonamescache.GeonamesCache()
+                cities = gc.get_cities()
+                uk_cities = {city['name'].lower() for city in cities.values() if city['countrycode'] == 'GB'}
+                uk_terms = uk_cities.union({"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland"})
+            except ImportError:
+                # Fallback if Streamlit Cloud refuses to install geonamescache
+                uk_terms = {"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland", "london", "manchester", "birmingham", "leeds", "glasgow", "southampton", "liverpool", "newcastle"}
 
             
         new_jobs = []
