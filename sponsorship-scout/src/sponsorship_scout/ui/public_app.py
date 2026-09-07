@@ -87,10 +87,19 @@ if scan_button:
         else:
             try:
                 supabase: Client = create_client(supabase_url, supabase_key)
-                # Note: Supabase limits to 1000 rows by default without pagination.
-                # In a real app we might paginate or query properly, for this task MVP we'll fetch up to 5000.
-                response = supabase.table("jobs").select("*").limit(5000).execute()
-                all_jobs = response.data
+                
+                all_jobs = []
+                page_size = 1000
+                offset = 0
+                while True:
+                    response = supabase.table("jobs").select("*").range(offset, offset + page_size - 1).execute()
+                    if not response.data:
+                        break
+                    all_jobs.extend(response.data)
+                    if len(response.data) < page_size:
+                        break
+                    offset += page_size
+                    
                 st.info(f"Loaded **{len(all_jobs)}** sponsored jobs from the database.")
             except Exception as e:
                 st.error(f"Failed to fetch jobs: {e}")

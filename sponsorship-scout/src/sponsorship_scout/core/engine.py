@@ -46,7 +46,11 @@ async def scan_companies(tenant_ids: Set[str], search_terms: List[str] = None) -
 def process_destinations(jobs: List[Dict], profile: Profile):
     for dest in profile.destinations:
         if isinstance(dest, DiscordDestination):
-            send_to_discord(jobs, dest.webhook_url)
+            webhook_url = dest.webhook_url or os.environ.get("DISCORD_WEBHOOK_URL")
+            if webhook_url:
+                send_to_discord(jobs, webhook_url)
+            else:
+                print("Warning: Discord destination configured but no webhook_url provided or DISCORD_WEBHOOK_URL env var found.")
         elif isinstance(dest, GistDestination):
             safe_name = "".join(c if c.isalnum() else "_" for c in profile.name.lower())
             send_to_gist(jobs, dest.gist_id, dest.github_token, f"queue_{safe_name}.json")
@@ -129,7 +133,9 @@ async def run_engine(config: Config, search_terms: List[str] = None):
                         matches_loc = any(fuzz.partial_ratio(l.lower(), loc) > 75 or fuzz.token_set_ratio(l.lower(), loc) > 75 for l in profile.target_locations)
             
             if matches_title and matches_loc:
-                if is_sponsored(company, sponsors):
+                is_spons, routes = is_sponsored(company, sponsors)
+                if is_spons:
+                    job['visa_routes'] = ', '.join(routes)
                     if url not in history:
                         print(f"[{profile.name}] Found: {company} - {job['title']}")
                         new_jobs.append(job)

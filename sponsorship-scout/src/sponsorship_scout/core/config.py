@@ -7,7 +7,7 @@ class DestinationBase(BaseModel):
 
 class DiscordDestination(DestinationBase):
     type: Literal["discord"]
-    webhook_url: str
+    webhook_url: Optional[str] = None
 
 class GistDestination(DestinationBase):
     type: Literal["gist"]
