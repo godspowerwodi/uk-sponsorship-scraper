@@ -93,6 +93,7 @@ with col3:
     industry_keywords = st.text_input("Industry Keywords", "tech, software, data", help="Used to match companies to the UK Gov Sponsor List.")
 
 cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against job titles.")
+st.caption("This is a lightweight keyword match between your CV and the Job Title. It does not scan the full job description.")
 
 st.markdown("<br>", unsafe_allow_html=True)
 btn_col1, btn_col2, btn_col3 = st.columns([1, 2, 1])
@@ -161,15 +162,10 @@ if scan_button:
         if new_jobs:
             if cv_text.strip():
                 try:
-                    from sklearn.feature_extraction.text import TfidfVectorizer
-                    from sklearn.metrics.pairwise import cosine_similarity
-                    vectorizer = TfidfVectorizer(stop_words='english')
-                    job_titles = [j['title'] for j in new_jobs]
-                    corpus = [cv_text] + job_titles
-                    tfidf_matrix = vectorizer.fit_transform(corpus)
-                    cosine_sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
-                    for i, job in enumerate(new_jobs):
-                        job['CV Match Score'] = f"{cosine_sim[i] * 100:.1f}%"
+                    from rapidfuzz import fuzz
+                    for job in new_jobs:
+                        score = fuzz.token_set_ratio(str(job.get('title') or '').lower(), cv_text.lower())
+                        job['CV Title Match Score'] = f"{score:.1f}%"
                 except Exception as e:
                     st.warning(f"Could not calculate CV match score: {e}")
 
@@ -186,7 +182,7 @@ if scan_button:
             if exact_matches:
                 st.success(f"Found {len(exact_matches)} exact matches!")
                 df_exact = pd.DataFrame(exact_matches)
-                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'added_date']
+                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Title Match Score', 'added_date']
                 df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols]]
                 
                 col1, col2 = st.columns(2)
@@ -203,7 +199,7 @@ if scan_button:
                 if exact_matches:
                     st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
                 df_broad = pd.DataFrame(broader_matches)
-                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'added_date']
+                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Title Match Score', 'added_date']
                 df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols]]
                 st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link")}, hide_index=True)
         else:
