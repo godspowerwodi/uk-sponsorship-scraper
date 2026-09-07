@@ -44,14 +44,15 @@ def _parse_tracjobs_html(text: str) -> List[Dict]:
     return jobs
 
 async def fetch_tracjobs(session: aiohttp.ClientSession, search_terms: List[str]) -> Tuple[str, List[Dict]]:
-    if not search_terms:
-        return "TracJobs", []
-        
     jobs = []
     
     async def fetch_page(term: str, page: int):
-        encoded_term = urllib.parse.quote(term)
-        url = f"https://www.jobs.nhs.uk/candidate/search/results?keyword={encoded_term}&page={page}"
+        if term:
+            encoded_term = urllib.parse.quote(term)
+            url = f"https://www.jobs.nhs.uk/candidate/search/results?keyword={encoded_term}&page={page}"
+        else:
+            url = f"https://www.jobs.nhs.uk/candidate/search/results?page={page}"
+            
         try:
             async with session.get(url, timeout=15, ssl=False) as resp:
                 if resp.status == 200:
@@ -61,7 +62,8 @@ async def fetch_tracjobs(session: aiohttp.ClientSession, search_terms: List[str]
             pass
         return []
 
-    for term in search_terms:
+    terms_to_search = search_terms if search_terms else [""]
+    for term in terms_to_search:
         tasks = [fetch_page(term, page) for page in range(1, 21)]
         results = await asyncio.gather(*tasks)
         

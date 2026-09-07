@@ -17,16 +17,12 @@ def run(config: str = "config.yaml"):
     abs_config = os.path.abspath(config)
     cfg = load_config(abs_config)
     target_terms = set(t.lower() for p in cfg.profiles if p.target_terms for t in p.target_terms)
-    if not target_terms:
-        target_terms = {"software", "data", "engineer", "nurse", "doctor", "manager", "finance", "analyst", "product", "cloud"}
     asyncio.run(run_engine(cfg, list(target_terms)))
 
 def run_job(config_path: str):
     print("Running scheduled scrape...")
     cfg = load_config(os.path.abspath(config_path))
     target_terms = set(t.lower() for p in cfg.profiles if p.target_terms for t in p.target_terms)
-    if not target_terms:
-        target_terms = {"software", "data", "engineer", "nurse", "doctor", "manager", "finance", "analyst", "product", "cloud"}
     asyncio.run(run_engine(cfg, list(target_terms)))
 
 @app.command()
