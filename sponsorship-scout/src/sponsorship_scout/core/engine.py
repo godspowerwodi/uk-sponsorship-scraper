@@ -5,10 +5,10 @@ import json
 from datetime import datetime
 from typing import List, Dict, Set
 
-from .config import Config, Profile, DestinationType, DiscordDestination, GistDestination, SqliteDestination
+from .config import Config, Profile, DestinationType, DiscordDestination, GistDestination, SqliteDestination, SupabaseDestination
 from .uk_sponsors import fetch_sponsors_and_generate_tenants, is_sponsored
 from ..ats import TENANT_SCRAPERS, CENTRALIZED_SCRAPERS
-from ..destinations import send_to_discord, send_to_gist, send_to_sqlite
+from ..destinations import send_to_discord, send_to_gist, send_to_sqlite, send_to_supabase
 
 async def fetch_with_sem(func, session, arg, sem):
     async with sem:
@@ -52,6 +52,8 @@ def process_destinations(jobs: List[Dict], profile: Profile):
             send_to_gist(jobs, dest.gist_id, dest.github_token, f"queue_{safe_name}.json")
         elif isinstance(dest, SqliteDestination):
             send_to_sqlite(jobs, dest.table_name)
+        elif isinstance(dest, SupabaseDestination):
+            send_to_supabase(jobs)
 
 async def run_engine(config: Config, search_terms: List[str] = None):
     if not config.profiles:

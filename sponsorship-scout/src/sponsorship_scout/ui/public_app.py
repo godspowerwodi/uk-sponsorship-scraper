@@ -3,32 +3,8 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 import streamlit as st
-import asyncio
 import pandas as pd
-from sponsorship_scout.core.uk_sponsors import fetch_sponsors_and_generate_tenants, is_sponsored
-from sponsorship_scout.core.engine import scan_companies
-
-def run_async(coro):
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = None
-    
-    if loop and loop.is_running():
-        # Fallback for when an event loop is already running in this thread
-        import threading
-        result = []
-        def _run():
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            result.append(new_loop.run_until_complete(coro))
-            new_loop.close()
-        t = threading.Thread(target=_run)
-        t.start()
-        t.join()
-        return result[0]
-    else:
-        return asyncio.run(coro)
+from supabase import create_client, Client
 
 st.set_page_config(page_title="UK Sponsorship Job Scout", layout="wide", page_icon="💼")
 
@@ -81,42 +57,46 @@ with st.expander("ℹ️ How to use this search", expanded=True):
     
     * **Job Title Keywords:** Enter comma-separated keywords for the roles you want (e.g., `Data Engineer, Software Developer, Python, Machine Learning Engineer, Carer, Doctor, Nurse`). The search is flexible and will find similar titles.
     * **Location:** Enter your target cities or regions, separated by commas (e.g., `London, Manchester, Bristol`). You can also just enter `UK` for nationwide searches.
-    * **Industry Keywords:** Used to filter the official UK Government Sponsor List to relevant companies before we scan their job boards. If you're looking for tech jobs for instance, use `tech, software, data, technology, ai`, for healthcare jobs, use `healthcare, health, care, nhs`.
     """)
 
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 with col1:
     job_title = st.text_input("Job Title Keywords", "Data Engineer", help="Comma-separated keywords for job titles.")
 with col2:
     location = st.text_input("Location", "London", help="Comma-separated locations.")
-with col3:
-    industry_keywords = st.text_input("Industry Keywords", "tech, software, data", help="Used to match companies to the UK Gov Sponsor List.")
 
-cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against job titles.")
-st.caption("This is a lightweight keyword match between your CV and the Job Title. It does not scan the full job description.")
+cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against full job descriptions.")
+st.caption("This will calculate a TF-IDF Cosine Similarity match score against the full job description.")
 
 st.markdown("<br>", unsafe_allow_html=True)
 btn_col1, btn_col2, btn_col3 = st.columns([1, 2, 1])
 with btn_col2:
-    scan_button = st.button("🚀 Scan for Sponsored Jobs", type="primary", width="stretch")
+    scan_button = st.button("🚀 Find Sponsored Jobs", type="primary", width="stretch")
 st.divider()
 
 if scan_button:
     titles = [t.strip().lower() for t in job_title.split(",") if t.strip()]
     locs = [l.strip().lower() for l in location.split(",") if l.strip()]
-    industries = set(i.strip().lower() for i in industry_keywords.split(",") if i.strip())
     
-    with st.spinner("Scraping ATS platforms... this may take 1-2 minutes."):
-        sponsors, tenant_ids = fetch_sponsors_and_generate_tenants(industries)
-        
-        if not sponsors:
-            st.error("Failed to fetch the UK Gov sponsor list.")
+    with st.spinner("Fetching live jobs from our database..."):
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_KEY")
+        if not supabase_url or not supabase_key:
+            st.error("Database connection missing. Please configure SUPABASE_URL and SUPABASE_KEY.")
             all_jobs = []
         else:
-            st.info(f"Loaded **{len(sponsors)}** licensed sponsors and targeting **{len(tenant_ids)}** ATS tenants.")
-            all_jobs = run_async(scan_companies(tenant_ids, titles))
-            
-    if sponsors:
+            try:
+                supabase: Client = create_client(supabase_url, supabase_key)
+                # Note: Supabase limits to 1000 rows by default without pagination.
+                # In a real app we might paginate or query properly, for this task MVP we'll fetch up to 5000.
+                response = supabase.table("jobs").select("*").limit(5000).execute()
+                all_jobs = response.data
+                st.info(f"Loaded **{len(all_jobs)}** sponsored jobs from the database.")
+            except Exception as e:
+                st.error(f"Failed to fetch jobs: {e}")
+                all_jobs = []
+
+    if all_jobs:
         broad_uk_terms = {"uk", "gb", "united kingdom"}
         user_searched_broad_loc = any(l in broad_uk_terms for l in locs) if locs else False
         uk_terms = set()
@@ -152,20 +132,29 @@ if scan_button:
                         matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
             
             if matches_title and matches_loc:
-                is_spons, routes = is_sponsored(company, sponsors)
-                if is_spons:
-                    job['routes'] = ', '.join(routes)
-                    salary = job.get('salary', '')
-                    job['Salary Check'] = parse_salary_and_check(salary)
-                    new_jobs.append(job)
+                salary = job.get('salary', '')
+                job['Salary Check'] = parse_salary_and_check(salary)
+                job['routes'] = job.get('visa_routes', 'Unknown')
+                new_jobs.append(job)
         
         if new_jobs:
             if cv_text.strip():
                 try:
-                    from rapidfuzz import fuzz
-                    for job in new_jobs:
-                        score = fuzz.token_set_ratio(str(job.get('title') or '').lower(), cv_text.lower())
-                        job['CV Title Match Score'] = f"{score:.1f}%"
+                    from sklearn.feature_extraction.text import TfidfVectorizer
+                    from sklearn.metrics.pairwise import cosine_similarity
+                    vectorizer = TfidfVectorizer(stop_words='english')
+                    
+                    descriptions = [cv_text] + [str(j.get('description') or j.get('title') or '') for j in new_jobs]
+                    tfidf_matrix = vectorizer.fit_transform(descriptions)
+                    
+                    cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
+                    
+                    for i, job in enumerate(new_jobs):
+                        score = cosine_similarities[i] * 100
+                        job['CV Match Score'] = f"{score:.1f}%"
+                        job['_raw_score'] = score
+                        
+                    new_jobs.sort(key=lambda x: x.get('_raw_score', 0), reverse=True)
                 except Exception as e:
                     st.warning(f"Could not calculate CV match score: {e}")
 
@@ -182,8 +171,8 @@ if scan_button:
             if exact_matches:
                 st.success(f"Found {len(exact_matches)} exact matches!")
                 df_exact = pd.DataFrame(exact_matches)
-                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Title Match Score', 'added_date']
-                df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols]]
+                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'created_at']
+                df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols and c not in ('description', '_raw_score', 'id')]]
                 
                 col1, col2 = st.columns(2)
                 with col1:
@@ -199,8 +188,9 @@ if scan_button:
                 if exact_matches:
                     st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
                 df_broad = pd.DataFrame(broader_matches)
-                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Title Match Score', 'added_date']
-                df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols]]
+                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'created_at']
+                df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols and c not in ('description', '_raw_score', 'id')]]
                 st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link")}, hide_index=True)
         else:
             st.warning("No sponsored jobs found matching your criteria.")
+

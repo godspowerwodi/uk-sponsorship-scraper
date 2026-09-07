@@ -72,4 +72,16 @@ async def fetch_tracjobs(session: aiohttp.ClientSession, search_terms: List[str]
         if len(jobs) >= 200:
             break
             
-    return "TracJobs", jobs[:200]
+    final_jobs = jobs[:200]
+    
+    async def fetch_desc(job):
+        if job.get('url'):
+            try:
+                async with session.get(job['url'], timeout=10, ssl=False) as r:
+                    if r.status == 200:
+                        html = await r.text()
+                        job['description'] = BeautifulSoup(html, 'html.parser').get_text(separator=' ', strip=True)
+            except: pass
+            
+    await asyncio.gather(*(fetch_desc(job) for job in final_jobs))
+    return "TracJobs", final_jobs

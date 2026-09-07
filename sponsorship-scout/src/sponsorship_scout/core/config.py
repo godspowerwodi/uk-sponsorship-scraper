@@ -18,7 +18,10 @@ class SqliteDestination(DestinationBase):
     type: Literal["sqlite"]
     table_name: str
 
-DestinationType = Union[DiscordDestination, GistDestination, SqliteDestination]
+class SupabaseDestination(DestinationBase):
+    type: Literal["supabase"]
+
+DestinationType = Union[DiscordDestination, GistDestination, SqliteDestination, SupabaseDestination]
 
 class Profile(BaseModel):
     name: str

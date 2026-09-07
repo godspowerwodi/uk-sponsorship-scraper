@@ -8,4 +8,5 @@ schedule>=1.2.0
 beautifulsoup4>=4.12.0
 requests>=2.31.0
 rapidfuzz>=3.0.0
-
+supabase>=2.3.0
+scikit-learn>=1.3.0
