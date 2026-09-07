@@ -59,7 +59,7 @@ import re
 def parse_salary_and_check(salary_str: str) -> str:
     if not salary_str or not isinstance(salary_str, str):
         return '🟠 Amber'
-    nums = re.findall(r'\b\d{1,3}(?:,\d{3})*(?:\.\d+)?\b', salary_str)
+    nums = re.findall(r'\d+(?:,\d{3})*(?:\.\d+)?', salary_str)
     if not nums:
         return '🟠 Amber'
     clean_nums = [float(n.replace(',', '')) for n in nums]
@@ -69,7 +69,7 @@ def parse_salary_and_check(salary_str: str) -> str:
 st.title("💼 UK Sponsorship Job Scout")
 st.markdown("Scan for live jobs from UK companies that offer visa sponsorship, straight from ATS platforms.")
 
-st.info("**Salary Check Legend**: 🟢 >= £41,800 | 🔴 < £41,800 | 🟠 Missing or Unclear (Depends on experience, hourly rate, etc.)")
+st.info("**Salary Check Legend**: 🟢 >= £41,800 | 🔴 < £41,800 | 🟠 Missing or Unclear (Depends on experience, hourly rate, etc.)\n\n*Note: We use the standard £41,800 Skilled Worker rate to calculate the salary traffic light. Sponsorship criteria may differ based on your visa type (e.g., Health and Care visas have a much lower threshold).*")
 
 st.divider()
 
@@ -153,7 +153,7 @@ if scan_button:
             if matches_title and matches_loc:
                 is_spons, routes = is_sponsored(company, sponsors)
                 if is_spons:
-                    job['visa_routes'] = ', '.join(routes)
+                    job['routes'] = ', '.join(routes)
                     salary = job.get('salary', '')
                     job['Salary Check'] = parse_salary_and_check(salary)
                     new_jobs.append(job)
@@ -186,7 +186,7 @@ if scan_button:
             if exact_matches:
                 st.success(f"Found {len(exact_matches)} exact matches!")
                 df_exact = pd.DataFrame(exact_matches)
-                cols = ['company', 'title', 'location', 'url', 'visa_routes', 'salary', 'Salary Check', 'CV Match Score', 'added_date']
+                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'added_date']
                 df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols]]
                 
                 col1, col2 = st.columns(2)
@@ -203,7 +203,7 @@ if scan_button:
                 if exact_matches:
                     st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
                 df_broad = pd.DataFrame(broader_matches)
-                cols = ['company', 'title', 'location', 'url', 'visa_routes', 'salary', 'Salary Check', 'CV Match Score', 'added_date']
+                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'added_date']
                 df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols]]
                 st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link")}, hide_index=True)
         else:
