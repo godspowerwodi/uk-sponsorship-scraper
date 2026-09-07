@@ -7,9 +7,9 @@ import urllib3
 import re
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from bs4 import BeautifulSoup
-from typing import Set, Tuple, List
+from typing import Set, Tuple, List, Dict
 
-def fetch_sponsors_and_generate_tenants(industry_keywords: Set[str]) -> Tuple[Set[str], Set[str]]:
+def fetch_sponsors_and_generate_tenants(industry_keywords: Set[str]) -> Tuple[Dict[str, Set[str]], Set[str]]:
     print(f"Fetching the latest UK Register of Licensed Sponsors CSV and filtering by {len(industry_keywords)} industry keywords...")
     
     # Try direct URL first, fallback to scraping gov.uk if 404
@@ -28,16 +28,20 @@ def fetch_sponsors_and_generate_tenants(industry_keywords: Set[str]) -> Tuple[Se
                     resp = requests.get(csv_url, timeout=15, verify=False)
                     break
 
-        sponsors = set()
+        sponsors = {}
         tenant_ids = set()
         
         decoded_content = resp.content.decode('utf-8-sig')
         reader = csv.reader(decoded_content.splitlines())
         
         for row in reader:
-            if row and len(row) > 0:
+            if row and len(row) > 4:
                 raw_name = row[0].strip().lower()
-                sponsors.add(raw_name)
+                visa_route = row[4].strip()
+                if raw_name not in sponsors:
+                    sponsors[raw_name] = set()
+                if visa_route:
+                    sponsors[raw_name].add(visa_route)
                 
                 if any(kw in raw_name for kw in industry_keywords):
                     clean_name = raw_name.replace(" ltd", "").replace(" limited", "").replace(" uk", "")
@@ -51,26 +55,27 @@ def fetch_sponsors_and_generate_tenants(industry_keywords: Set[str]) -> Tuple[Se
         
     except Exception as e:
         print(f"Error fetching sponsors: {e}")
-        return set(), set()
+        return {}, set()
 
-def is_sponsored(company_name: str, sponsors_set: Set[str]) -> bool:
+def is_sponsored(company_name: str, sponsors_dict: Dict[str, Set[str]]) -> Tuple[bool, List[str]]:
     company_norm = company_name.strip().lower()
-    if company_norm in sponsors_set:
-        return True
-    for s in sponsors_set:
+    if company_norm in sponsors_dict:
+        return True, list(sponsors_dict[company_norm])
+    for s, routes in sponsors_dict.items():
         if company_norm in s or s in company_norm:
             if len(company_norm) > 4 and len(s) > 4:
-                return True
+                return True, list(routes)
                 
     # Fuzzy matching for robustness (e.g. slight naming variations)
     from rapidfuzz import process, fuzz
     match = process.extractOne(
         company_norm, 
-        sponsors_set, 
+        sponsors_dict.keys(), 
         scorer=fuzz.token_set_ratio, 
         score_cutoff=85
     )
     if match:
-        return True
+        matched_key = match[0]
+        return True, list(sponsors_dict[matched_key])
         
-    return False
+    return False, []

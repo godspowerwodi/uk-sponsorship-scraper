@@ -12,6 +12,7 @@ def _parse_tracjobs_html(text: str) -> List[Dict]:
     for block in job_blocks:
         title_elem = block.find('a', attrs={'data-test': 'search-result-job-title'})
         loc_block = block.find('div', attrs={'data-test': 'search-result-location'})
+        salary_elem = block.find('li', attrs={'data-test': 'search-result-salary'})
         
         if title_elem and loc_block:
             title = title_elem.get_text(strip=True)
@@ -26,10 +27,17 @@ def _parse_tracjobs_html(text: str) -> List[Dict]:
                 if loc_elem:
                     location = loc_elem.get_text(strip=True)
             
+            salary = ''
+            if salary_elem:
+                strong = salary_elem.find('strong')
+                if strong:
+                    salary = strong.get_text(strip=True)
+            
             jobs.append({
                 'title': title,
                 'company': company or "NHS",
                 'location': location or 'UK',
+                'salary': salary,
                 'url': f"https://www.jobs.nhs.uk{link}" if link.startswith('/') else link
             })
             

@@ -54,12 +54,25 @@ div[data-testid="stMetricValue"] {
 </style>
 """, unsafe_allow_html=True)
 
+import re
+
+def parse_salary_and_check(salary_str: str) -> str:
+    if not salary_str or not isinstance(salary_str, str):
+        return '🟠 Amber'
+    nums = re.findall(r'\b\d{1,3}(?:,\d{3})*(?:\.\d+)?\b', salary_str)
+    if not nums:
+        return '🟠 Amber'
+    clean_nums = [float(n.replace(',', '')) for n in nums]
+    max_sal = max(clean_nums)
+    return '🟢 Green' if max_sal >= 41800 else '🔴 Red'
+
 st.title("💼 UK Sponsorship Job Scout")
 st.markdown("Scan for live jobs from UK companies that offer visa sponsorship, straight from ATS platforms.")
 
+st.info("**Salary Check Legend**: 🟢 >= £41,800 | 🔴 < £41,800 | 🟠 Missing or Unclear (Depends on experience, hourly rate, etc.)")
+
 st.divider()
 
-# Mobile-friendly Search Inputs (moved out of sidebar so they are immediately visible on small screens)
 st.subheader("🎯 Search Criteria")
 
 with st.expander("ℹ️ How to use this search", expanded=True):
@@ -71,7 +84,6 @@ with st.expander("ℹ️ How to use this search", expanded=True):
     * **Industry Keywords:** Used to filter the official UK Government Sponsor List to relevant companies before we scan their job boards. If you're looking for tech jobs for instance, use `tech, software, data, technology, ai`, for healthcare jobs, use `healthcare, health, care, nhs`.
     """)
 
-# Use columns for a better layout on desktop; on mobile, Streamlit automatically stacks them vertically!
 col1, col2, col3 = st.columns(3)
 with col1:
     job_title = st.text_input("Job Title Keywords", "Data Engineer", help="Comma-separated keywords for job titles.")
@@ -79,6 +91,8 @@ with col2:
     location = st.text_input("Location", "London", help="Comma-separated locations.")
 with col3:
     industry_keywords = st.text_input("Industry Keywords", "tech, software, data", help="Used to match companies to the UK Gov Sponsor List.")
+
+cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against job titles.")
 
 st.markdown("<br>", unsafe_allow_html=True)
 btn_col1, btn_col2, btn_col3 = st.columns([1, 2, 1])
@@ -102,13 +116,11 @@ if scan_button:
             all_jobs = run_async(scan_companies(tenant_ids, titles))
             
     if sponsors:
-        # Pre-load UK terms if a broad UK search is requested
         broad_uk_terms = {"uk", "gb", "united kingdom"}
         user_searched_broad_loc = any(l in broad_uk_terms for l in locs) if locs else False
         uk_terms = set()
         if user_searched_broad_loc:
             uk_terms = {"uk", "united kingdom", "gb", "england", "scotland", "wales", "northern ireland", "london", "manchester", "birmingham", "leeds", "glasgow", "liverpool", "newcastle", "sheffield", "belfast", "bristol", "edinburgh", "cardiff"}
-
             
         new_jobs = []
         for job in all_jobs:
@@ -123,7 +135,6 @@ if scan_button:
                 
             matches_loc = True
             if locs:
-                # NHS checks
                 is_nhs = False
                 url_lower = (job.get('url') or '').lower()
                 company_lower = company.lower()
@@ -134,17 +145,34 @@ if scan_button:
                     matches_loc = True
                 else:
                     if user_searched_broad_loc:
-                        import re
                         matches_loc = any(re.search(r'\b' + re.escape(uk_term) + r'\b', loc_lower) for uk_term in uk_terms)
                     else:
                         from rapidfuzz import fuzz
                         matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
             
             if matches_title and matches_loc:
-                if is_sponsored(company, sponsors):
+                is_spons, routes = is_sponsored(company, sponsors)
+                if is_spons:
+                    job['visa_routes'] = ', '.join(routes)
+                    salary = job.get('salary', '')
+                    job['Salary Check'] = parse_salary_and_check(salary)
                     new_jobs.append(job)
         
         if new_jobs:
+            if cv_text.strip():
+                try:
+                    from sklearn.feature_extraction.text import TfidfVectorizer
+                    from sklearn.metrics.pairwise import cosine_similarity
+                    vectorizer = TfidfVectorizer(stop_words='english')
+                    job_titles = [j['title'] for j in new_jobs]
+                    corpus = [cv_text] + job_titles
+                    tfidf_matrix = vectorizer.fit_transform(corpus)
+                    cosine_sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
+                    for i, job in enumerate(new_jobs):
+                        job['CV Match Score'] = f"{cosine_sim[i] * 100:.1f}%"
+                except Exception as e:
+                    st.warning(f"Could not calculate CV match score: {e}")
+
             exact_matches = []
             broader_matches = []
             for job in new_jobs:
@@ -157,9 +185,8 @@ if scan_button:
             
             if exact_matches:
                 st.success(f"Found {len(exact_matches)} exact matches!")
-                import pandas as pd
                 df_exact = pd.DataFrame(exact_matches)
-                cols = ['company', 'title', 'location', 'url', 'added_date']
+                cols = ['company', 'title', 'location', 'url', 'visa_routes', 'salary', 'Salary Check', 'CV Match Score', 'added_date']
                 df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols]]
                 
                 col1, col2 = st.columns(2)
@@ -175,9 +202,8 @@ if scan_button:
             if broader_matches:
                 if exact_matches:
                     st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
-                import pandas as pd
                 df_broad = pd.DataFrame(broader_matches)
-                cols = ['company', 'title', 'location', 'url', 'added_date']
+                cols = ['company', 'title', 'location', 'url', 'visa_routes', 'salary', 'Salary Check', 'CV Match Score', 'added_date']
                 df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols]]
                 st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link")}, hide_index=True)
         else:
