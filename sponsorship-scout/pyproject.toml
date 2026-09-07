@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sponsorship-scout"
-version = "0.1.13"
+version = "0.1.14"
 description = "Multi-tenant UK Sponsorship Job Scraper"
 readme = "README.md"
 requires-python = ">=3.10"
