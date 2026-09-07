@@ -17,7 +17,7 @@ jobs:
         with:
           version: "latest"
       - name: Install dependencies
-        run: cd sponsorship-scout && uv pip install -e .
+        run: cd sponsorship-scout && uv venv && uv pip install -e .
       - name: Run Scraper
         env:
           SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
@@ -38,7 +38,7 @@ jobs:
         with:
           version: "latest"
       - name: Install dependencies
-        run: cd sponsorship-scout && uv pip install -e .
+        run: cd sponsorship-scout && uv venv && uv pip install -e .
       - name: Run Scraper
         env:
           SUPABASE_URL: ${{ secrets.DEV_SUPABASE_URL }}
