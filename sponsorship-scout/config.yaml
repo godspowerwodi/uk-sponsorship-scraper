@@ -4,5 +4,5 @@ profiles:
     target_locations: ["london"]
     industry_keywords: ["tech", "software"]
     destinations:
-      - type: sqlite
+      - type: supabase
         table_name: "test_jobs"
