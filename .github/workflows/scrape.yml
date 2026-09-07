@@ -22,7 +22,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.PROD_SUPABASE_KEY }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.PROD_DISCORD_WEBHOOK_URL }}
+
         run: |
           cd sponsorship-scout
           python -m sponsorship_scout.cli run
@@ -43,7 +43,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.DEV_SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.DEV_SUPABASE_KEY }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DEV_DISCORD_WEBHOOK_URL }}
+
         run: |
           cd sponsorship-scout
           python -m sponsorship_scout.cli run
