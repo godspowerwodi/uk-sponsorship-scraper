@@ -76,11 +76,13 @@ async def fetch_tracjobs(session: aiohttp.ClientSession, search_terms: List[str]
     unique_jobs = list({j['url']: j for j in jobs if j.get('url')}.values())
     final_jobs = unique_jobs[:1500]
     
-    sem = asyncio.Semaphore(10)
+    sem = asyncio.Semaphore(5)
+    import random
     async def fetch_desc(job):
         async with sem:
             if job.get('url'):
                 try:
+                    await asyncio.sleep(random.uniform(0.1, 0.5))
                     async with session.get(job['url'], timeout=10, ssl=False) as r:
                         if r.status == 200:
                             html = await r.text()
