@@ -11,7 +11,8 @@ async def fetch_ashby(session: aiohttp.ClientSession, company: str) -> Tuple[str
                 data = await resp.json()
                 jobs = [{'title': j.get('title') or '', 'location': j.get('location') or '', 'url': j.get('jobUrl') or '', 'salary': '', 'description': j.get('descriptionPlain') or j.get('descriptionHtml') or ''} for j in data.get('jobs', [])]
                 
-                sem = asyncio.Semaphore(10)
+                sem = asyncio.Semaphore(5)
+                import random
                 async def fetch_desc(job):
                     async with sem:
                         if job.get('description'):
@@ -19,6 +20,7 @@ async def fetch_ashby(session: aiohttp.ClientSession, company: str) -> Tuple[str
                             return
                         if job['url']:
                             try:
+                                await asyncio.sleep(random.uniform(0.1, 0.5))
                                 async with session.get(job['url'], timeout=10, ssl=False) as r:
                                     if r.status == 200:
                                         html = await r.text()
