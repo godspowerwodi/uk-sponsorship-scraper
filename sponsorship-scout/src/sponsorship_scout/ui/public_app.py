@@ -59,13 +59,15 @@ with st.expander("ℹ️ How to use this search", expanded=True):
     * **Location:** Enter your target cities or regions, separated by commas (e.g., `London, Manchester, Bristol`). You can also just enter `UK` for nationwide searches.
     """)
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 with col1:
     job_title = st.text_input("Job Title Keywords", "Data Engineer", help="Comma-separated keywords for job titles.")
 with col2:
     location = st.text_input("Location", "London", help="Comma-separated locations.")
 with col3:
     role_level = st.selectbox("Role Level", ["Any", "Junior / Entry", "Mid Level", "Senior / Lead", "Director / Exec"])
+with col4:
+    salary_threshold = st.selectbox("Salary Threshold", ["Any", "Meets Threshold or Unknown", "Strictly Meets Threshold"])
 
 cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against full job descriptions.")
 st.caption("This will calculate a TF-IDF Cosine Similarity match score against the full job description.")
@@ -164,8 +166,16 @@ if scan_button:
             if matches_title and matches_loc and matches_level:
                 salary = job.get('salary', '')
                 job['Salary Check'] = parse_salary_and_check(salary)
-                job['routes'] = job.get('visa_routes', 'Unknown')
-                new_jobs.append(job)
+                
+                matches_salary = True
+                if salary_threshold == "Strictly Meets Threshold":
+                    matches_salary = job['Salary Check'] == '🟢 Green'
+                elif salary_threshold == "Meets Threshold or Unknown":
+                    matches_salary = job['Salary Check'] in ['🟢 Green', '🟠 Amber']
+                
+                if matches_salary:
+                    job['routes'] = job.get('visa_routes', 'Unknown')
+                    new_jobs.append(job)
         
         if new_jobs:
             if cv_text.strip():

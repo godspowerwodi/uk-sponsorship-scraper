@@ -2,6 +2,7 @@ import os
 from typing import List, Dict
 from supabase import create_client, Client
 import hashlib
+from datetime import datetime, timedelta
 
 def get_job_id(url: str) -> str:
     return hashlib.sha256(url.encode()).hexdigest()
@@ -48,5 +49,9 @@ def send_to_supabase(jobs: List[Dict]):
         try:
             response = supabase.table("jobs").upsert(records).execute()
             print(f"[Supabase] Successfully upserted {len(records)} jobs to Supabase.")
+            
+            seven_days_ago = (datetime.utcnow() - timedelta(days=7)).isoformat()
+            delete_response = supabase.table("jobs").delete().lt("created_at", seven_days_ago).execute()
+            print(f"[Supabase] Cleaned up stale jobs older than {seven_days_ago}.")
         except Exception as e:
-            print(f"[Supabase] Error upserting jobs: {e}")
+            print(f"[Supabase] Error upserting/deleting jobs: {e}")
