@@ -108,14 +108,25 @@ async def run_engine(config: Config, search_terms: List[str] = None):
                 matches_title = any(fuzz.partial_ratio(term.lower(), title) > 75 or fuzz.token_set_ratio(term.lower(), title) > 75 for term in profile.target_terms)
                 
             matches_loc = True
-            if profile.target_locations:
-                # NHS checks
-                is_nhs = False
-                url_lower = (job.get('url') or '').lower()
-                company_lower = company.lower()
-                if "jobs.nhs.uk" in url_lower or "nhs" in company_lower:
-                    is_nhs = True
+            
+            # --- BOUNCER LOGIC ---
+            url_lower = (job.get('url') or '').lower()
+            company_lower = company.lower()
+            is_nhs = "jobs.nhs.uk" in url_lower or "nhs" in company_lower
+            
+            if not is_nhs:
+                import re
+                blacklist_terms = ["usa", "us", "united states", "canada", "australia", "india", "germany", "france", "ireland", "new york", "california", "texas", "al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi", "id", "il", "in", "ia", "ks", "ky", "la", "me", "md", "ma", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", "nc", "nd", "oh", "ok", "or", "pa", "ri", "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy", "dc"]
+                hits_blacklist = any(re.search(r'\b' + re.escape(term) + r'\b', loc) for term in blacklist_terms)
                 
+                if hits_blacklist:
+                    uk_positive_terms = ["uk", "united kingdom", "gb", "great britain"]
+                    has_uk_term = any(re.search(r'\b' + re.escape(term) + r'\b', loc) for term in uk_positive_terms)
+                    if not has_uk_term:
+                        matches_loc = False
+            # ---------------------
+
+            if matches_loc and profile.target_locations:
                 broad_uk_terms = {"uk", "gb", "united kingdom"}
                 user_searched_broad = any(l.lower() in broad_uk_terms for l in profile.target_locations)
 
