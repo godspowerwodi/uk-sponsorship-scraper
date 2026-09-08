@@ -153,13 +153,13 @@ if scan_button:
                 level_keywords_senior = ["senior", "lead", "principal", "head", "staff", "manager"]
                 level_keywords_director = ["director", "vp", "chief"]
                 if role_level == "Junior / Entry":
-                    matches_level = any(k in title_lower for k in level_keywords_junior)
+                    matches_level = any(re.search(rf'\b{re.escape(k)}\b', title_lower) for k in level_keywords_junior)
                 elif role_level == "Senior / Lead":
-                    matches_level = any(k in title_lower for k in level_keywords_senior)
+                    matches_level = any(re.search(rf'\b{re.escape(k)}\b', title_lower) for k in level_keywords_senior)
                 elif role_level == "Director / Exec":
-                    matches_level = any(k in title_lower for k in level_keywords_director)
+                    matches_level = any(re.search(rf'\b{re.escape(k)}\b', title_lower) for k in level_keywords_director)
                 elif role_level == "Mid Level":
-                    matches_level = not any(k in title_lower for k in (level_keywords_junior + level_keywords_senior + level_keywords_director))
+                    matches_level = not any(re.search(rf'\b{re.escape(k)}\b', title_lower) for k in (level_keywords_junior + level_keywords_senior + level_keywords_director))
 
             if matches_title and matches_loc and matches_level:
                 salary = job.get('salary', '')
