@@ -62,19 +62,16 @@ async def fetch_tracjobs(session: aiohttp.ClientSession, search_terms: List[str]
             pass
         return []
 
-    terms_to_search = search_terms if search_terms else [""]
+    terms_to_search = search_terms if search_terms else ["doctor", "nurse", "carer", "healthcare assistant", "consultant", "surgeon", "physiotherapist", "midwife", "paramedic", "software", "data", "manager"]
     for term in terms_to_search:
-        tasks = [fetch_page(term, page) for page in range(1, 21)]
+        tasks = [fetch_page(term, page) for page in range(1, 6)]
         results = await asyncio.gather(*tasks)
         
         for parsed in results:
             if parsed:
                 jobs.extend(parsed)
-                
-        if len(jobs) >= 200:
-            break
             
-    final_jobs = jobs[:200]
+    final_jobs = jobs[:600]
     
     sem = asyncio.Semaphore(10)
     async def fetch_desc(job):

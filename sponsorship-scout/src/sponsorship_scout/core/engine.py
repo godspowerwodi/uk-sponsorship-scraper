@@ -27,9 +27,8 @@ async def scan_companies(tenant_ids: Set[str], search_terms: List[str] = None) -
             for scraper in TENANT_SCRAPERS:
                 tasks.append(fetch_with_sem(scraper, session, company, sem))
         
-        if search_terms:
-            for scraper in CENTRALIZED_SCRAPERS:
-                tasks.append(fetch_with_sem(scraper, session, search_terms, sem))
+        for scraper in CENTRALIZED_SCRAPERS:
+            tasks.append(fetch_with_sem(scraper, session, search_terms, sem))
                 
         results = await asyncio.gather(*tasks)
         
