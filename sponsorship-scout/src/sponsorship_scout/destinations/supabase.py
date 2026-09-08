@@ -50,8 +50,8 @@ def send_to_supabase(jobs: List[Dict]):
             response = supabase.table("jobs").upsert(records).execute()
             print(f"[Supabase] Successfully upserted {len(records)} jobs to Supabase.")
             
-            seven_days_ago = (datetime.utcnow() - timedelta(days=7)).isoformat()
-            delete_response = supabase.table("jobs").delete().lt("created_at", seven_days_ago).execute()
-            print(f"[Supabase] Cleaned up stale jobs older than {seven_days_ago}.")
+            seven_days_ago_string = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+            delete_response = supabase.table("jobs").delete().lt("created_at", seven_days_ago_string).execute()
+            print(f"[Supabase] Cleaned up stale jobs older than {seven_days_ago_string}.")
         except Exception as e:
             print(f"[Supabase] Error upserting/deleting jobs: {e}")
