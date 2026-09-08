@@ -149,8 +149,8 @@ if scan_button:
             
             matches_level = True
             if role_level != "Any":
-                level_keywords_junior = ["junior", "entry", "graduate", "trainee", "intern"]
-                level_keywords_senior = ["senior", "lead", "principal", "head", "staff", "manager"]
+                level_keywords_junior = ["junior", "jr", "entry", "graduate", "trainee", "intern"]
+                level_keywords_senior = ["senior", "sr", "lead", "principal", "head", "staff", "manager"]
                 level_keywords_director = ["director", "vp", "chief"]
                 if role_level == "Junior / Entry":
                     matches_level = any(re.search(rf'\b{re.escape(k)}\b', title_lower) for k in level_keywords_junior)
