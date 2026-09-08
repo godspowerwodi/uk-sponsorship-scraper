@@ -137,8 +137,13 @@ if scan_button:
                     if user_searched_broad_loc:
                         matches_loc = any(re.search(r'\b' + re.escape(uk_term) + r'\b', loc_lower) for uk_term in uk_terms)
                     else:
-                        from rapidfuzz import fuzz
-                        matches_loc = any(fuzz.partial_ratio(l, loc_lower) > 75 or fuzz.token_set_ratio(l, loc_lower) > 75 for l in locs)
+                        def _check_loc(user_loc, job_loc):
+                            if re.search(r'\b' + re.escape(user_loc) + r'\b', job_loc):
+                                if user_loc == 'york' and 'new york' in job_loc:
+                                    return False
+                                return True
+                            return False
+                        matches_loc = any(_check_loc(l, loc_lower) for l in locs)
             
             if matches_title and matches_loc:
                 salary = job.get('salary', '')
