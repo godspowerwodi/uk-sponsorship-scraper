@@ -71,7 +71,9 @@ async def fetch_tracjobs(session: aiohttp.ClientSession, search_terms: List[str]
             if parsed:
                 jobs.extend(parsed)
             
-    final_jobs = jobs[:600]
+    # Deduplicate jobs by URL
+    unique_jobs = list({j['url']: j for j in jobs if j.get('url')}.values())
+    final_jobs = unique_jobs[:600]
     
     sem = asyncio.Semaphore(10)
     async def fetch_desc(job):
