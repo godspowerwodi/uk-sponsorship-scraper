@@ -62,9 +62,10 @@ async def fetch_tracjobs(session: aiohttp.ClientSession, search_terms: List[str]
             pass
         return []
 
-    terms_to_search = search_terms if search_terms else ["doctor", "nurse", "carer", "healthcare assistant", "consultant", "surgeon", "physiotherapist", "midwife", "paramedic", "software", "data", "manager"]
+    terms_to_search = search_terms if search_terms else ["", "doctor", "nurse", "carer", "healthcare assistant", "consultant", "surgeon", "physiotherapist", "midwife", "paramedic", "software", "data", "manager"]
     for term in terms_to_search:
-        tasks = [fetch_page(term, page) for page in range(1, 6)]
+        pages = 50 if term == "" else 5
+        tasks = [fetch_page(term, page) for page in range(1, pages + 1)]
         results = await asyncio.gather(*tasks)
         
         for parsed in results:
@@ -73,7 +74,7 @@ async def fetch_tracjobs(session: aiohttp.ClientSession, search_terms: List[str]
             
     # Deduplicate jobs by URL
     unique_jobs = list({j['url']: j for j in jobs if j.get('url')}.values())
-    final_jobs = unique_jobs[:600]
+    final_jobs = unique_jobs[:1500]
     
     sem = asyncio.Semaphore(10)
     async def fetch_desc(job):
