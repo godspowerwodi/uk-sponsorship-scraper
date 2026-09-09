@@ -75,6 +75,10 @@ profiles:
         webhook_url: "https://discord.com/api/webhooks/..."
 ```
 
+> **💡 Pro Tip on `industry_keywords`**: 
+> * **The Fast Path**: Specifying keywords like `["tech", "software"]` filters the 127,000+ UK sponsors down to matching companies, making the CLI finish scraping in under 5 minutes.
+> * **God Mode**: If you set `industry_keywords: []`, the engine completely bypasses the filter and scans **all 127,000+ UK sponsors** against the ATS APIs. This guarantees you catch jobs from giants like Monzo or Revolut (who don't have "tech" in their legal name), but the scan will take around ~2.5 hours to complete.
+
 ### 2. Run the CLI
 The `sponsorship-scout` command is now available in your terminal:
 
