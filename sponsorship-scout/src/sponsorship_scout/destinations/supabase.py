@@ -41,7 +41,7 @@ def send_to_supabase(jobs: List[Dict]):
             "description": job.get('description'),
             "salary": job.get('salary'),
             "visa_routes": job.get('visa_routes') or "Unknown",
-            "created_at": job.get('added_date')
+            "last_seen_at": datetime.utcnow().isoformat()
         }
         records.append(record)
         
@@ -53,8 +53,15 @@ def send_to_supabase(jobs: List[Dict]):
                 supabase.table("jobs").upsert(batch).execute()
             print(f"[Supabase] Successfully upserted {len(records)} jobs to Supabase in batches of {batch_size}.")
             
-            seven_days_ago_string = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-            delete_response = supabase.table("jobs").delete().lt("created_at", seven_days_ago_string).execute()
-            print(f"[Supabase] Cleaned up stale jobs older than {seven_days_ago_string}.")
+            three_days_ago_string = (datetime.utcnow() - timedelta(days=3)).isoformat()
+            thirty_days_ago_string = (datetime.utcnow() - timedelta(days=30)).isoformat()
+            
+            # 1. Purge Dead Jobs (removed from API)
+            supabase.table("jobs").delete().lt("last_seen_at", three_days_ago_string).execute()
+            
+            # 2. Purge Ghost Jobs (stale on API)
+            supabase.table("jobs").delete().lt("created_at", thirty_days_ago_string).execute()
+            
+            print(f"[Supabase] Cleaned up dead jobs (>3 days unseen) and ghost jobs (>30 days old).")
         except Exception as e:
             print(f"[Supabase] Error upserting/deleting jobs: {e}")
