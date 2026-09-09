@@ -32,6 +32,32 @@ div[data-testid="stMetricValue"] {
 
 import re
 
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_all_jobs_from_db():
+    all_jobs = fetch_all_jobs_from_db()
+        if not all_jobs:
+            if not os.environ.get("SUPABASE_URL"):
+                st.error("Database connection missing. Please configure SUPABASE_URL and SUPABASE_KEY.")
+            else:
+                st.error("Failed to fetch jobs or database is empty.")
+        else:
+            st.info(f"Loaded **{len(all_jobs)}** sponsored jobs from the database.")
+        page_size = 1000
+        offset = 0
+        while True:
+            response = supabase.table("jobs").select("*").range(offset, offset + page_size - 1).execute()
+            if not response.data:
+                break
+            all_jobs.extend(response.data)
+            if len(response.data) < page_size:
+                break
+            offset += page_size
+        return all_jobs
+    except Exception as e:
+        print(f"Failed to fetch jobs: {e}")
+        return []
+
 def parse_salary_and_check(salary_str: str) -> str:
     if not salary_str or not isinstance(salary_str, str):
         return '🟠 Amber'
@@ -83,11 +109,14 @@ if scan_button:
     locs = [l.strip().lower() for l in location.split(",") if l.strip()]
     
     with st.spinner("Fetching live jobs from our database..."):
-        supabase_url = os.environ.get("SUPABASE_URL")
-        supabase_key = os.environ.get("SUPABASE_KEY")
-        if not supabase_url or not supabase_key:
-            st.error("Database connection missing. Please configure SUPABASE_URL and SUPABASE_KEY.")
-            all_jobs = []
+        all_jobs = fetch_all_jobs_from_db()
+        if not all_jobs:
+            if not os.environ.get("SUPABASE_URL"):
+                st.error("Database connection missing. Please configure SUPABASE_URL and SUPABASE_KEY.")
+            else:
+                st.error("Failed to fetch jobs or database is empty.")
+        else:
+            st.info(f"Loaded **{len(all_jobs)}** sponsored jobs from the database.")
         else:
             try:
                 supabase: Client = create_client(supabase_url, supabase_key)
