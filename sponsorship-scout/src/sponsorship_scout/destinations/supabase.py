@@ -47,8 +47,11 @@ def send_to_supabase(jobs: List[Dict]):
         
     if records:
         try:
-            response = supabase.table("jobs").upsert(records).execute()
-            print(f"[Supabase] Successfully upserted {len(records)} jobs to Supabase.")
+            batch_size = 500
+            for i in range(0, len(records), batch_size):
+                batch = records[i:i + batch_size]
+                supabase.table("jobs").upsert(batch).execute()
+            print(f"[Supabase] Successfully upserted {len(records)} jobs to Supabase in batches of {batch_size}.")
             
             seven_days_ago_string = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
             delete_response = supabase.table("jobs").delete().lt("created_at", seven_days_ago_string).execute()
