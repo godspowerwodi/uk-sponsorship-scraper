@@ -46,7 +46,7 @@ def fetch_all_jobs_from_db():
         page_size = 1000
         offset = 0
         while True:
-            response = supabase.table("jobs").select("*").range(offset, offset + page_size - 1).execute()
+            response = supabase.table("jobs").select("id, title, company, location, url, salary, visa_routes, created_at").range(offset, offset + page_size - 1).execute().range(offset, offset + page_size - 1).execute()
             if not response.data:
                 break
             all_jobs.extend(response.data)
@@ -117,27 +117,7 @@ if scan_button:
                 st.error("Failed to fetch jobs or database is empty.")
         else:
             st.info(f"Loaded **{len(all_jobs)}** sponsored jobs from the database.")
-        else:
-            try:
-                supabase: Client = create_client(supabase_url, supabase_key)
-                
-                all_jobs = []
-                page_size = 1000
-                offset = 0
-                while True:
-                    response = supabase.table("jobs").select("*").range(offset, offset + page_size - 1).execute()
-                    if not response.data:
-                        break
-                    all_jobs.extend(response.data)
-                    if len(response.data) < page_size:
-                        break
-                    offset += page_size
-                    
-                st.info(f"Loaded **{len(all_jobs)}** sponsored jobs from the database.")
-            except Exception as e:
-                st.error(f"Failed to fetch jobs: {e}")
-                all_jobs = []
-
+            
     if all_jobs:
         broad_uk_terms = {"uk", "gb", "united kingdom"}
         user_searched_broad_loc = any(l in broad_uk_terms for l in locs) if locs else False
@@ -213,7 +193,23 @@ if scan_button:
                     from sklearn.metrics.pairwise import cosine_similarity
                     vectorizer = TfidfVectorizer(stop_words='english')
                     
-                    descriptions = [cv_text] + [str(j.get('description') or j.get('title') or '') for j in new_jobs]
+                    # LAZY FETCH DESCRIPTIONS FOR MATCHED JOBS ONLY
+                    job_ids = [j['id'] for j in new_jobs if 'id' in j]
+                    descriptions_map = {}
+                    if job_ids:
+                        supabase_url = os.environ.get("SUPABASE_URL")
+                        supabase_key = os.environ.get("SUPABASE_KEY")
+                        if supabase_url and supabase_key:
+                            supabase: Client = create_client(supabase_url, supabase_key)
+                            # Fetch in chunks of 100 to avoid URL length limits
+                            for i in range(0, len(job_ids), 100):
+                                chunk_ids = job_ids[i:i+100]
+                                desc_resp = supabase.table("jobs").select("id, description").in_("id", chunk_ids).execute()
+                                if desc_resp.data:
+                                    for row in desc_resp.data:
+                                        descriptions_map[row['id']] = row.get('description', '')
+
+                    descriptions = [cv_text] + [str(descriptions_map.get(j.get('id'), j.get('title')) or j.get('title') or '') for j in new_jobs]
                     tfidf_matrix = vectorizer.fit_transform(descriptions)
                     
                     cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
