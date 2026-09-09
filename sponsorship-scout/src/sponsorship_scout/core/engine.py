@@ -52,6 +52,9 @@ async def scan_companies(tenant_ids: Set[str], search_terms: List[str] = None) -
                     job['added_date'] = datetime.now().strftime('%Y-%m-%d')
                     all_jobs.append(job)
             
+            tenant_tasks.clear()
+            chunk_results.clear()
+            
     print(f"Scanned endpoints. Found {len(all_jobs)} total jobs.")
     return all_jobs
 
