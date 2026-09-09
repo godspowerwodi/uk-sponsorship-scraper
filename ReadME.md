@@ -1,5 +1,5 @@
-ï»¿<h1 align="center">
-  ð Sponsorship Scout
+﻿<h1 align="center">
+  🚀 Sponsorship Scout
 </h1>
 
 <p align="center">
@@ -7,36 +7,36 @@
 </p>
 
 <p align="center">
-  <a href="https://uk-sponsorship-scraper.streamlit.app/"><strong>ð¥ Try the Live Public App Here! ð¥</strong></a>
+  <a href="https://uk-sponsorship-scraper.streamlit.app/"><strong>🔥 Try the Live Public App Here! 🔥</strong></a>
 </p>
 
 ![Sponsorship Scout Dashboard](docs/screenshot.png)
 
-## ð What is it?
+## 📌 What is it?
 Sponsorship Scout is a robust Python package that dynamically scrapes popular ATS (Applicant Tracking System) platforms (Greenhouse, Lever, Ashby, SmartRecruiters) and cross-references the hiring companies against the **official UK Government Register of Licensed Sponsors**. 
 
 It guarantees that every job it finds is from a company officially licensed to offer UK Visa Sponsorship.
 
 ---
 
-## ð Try the Live Public App
+## 🌐 Try the Live Public App
 Don't want to install anything? We host a live, real-time search engine for sponsored jobs directly on Streamlit Community Cloud.
 
-ð **[Launch UK Sponsorship Job Scout](https://uk-sponsorship-scraper.streamlit.app/)** ð
+👉 **[Launch UK Sponsorship Job Scout](https://uk-sponsorship-scraper.streamlit.app/)** 👈
 
 ---
 
-## â¨ Features
-- **ð Multi-Tenant:** Configure unlimited profiles for yourself and friends in a single YAML file.
-- **â¡ Async Engine:** Blazing fast concurrent scraping of over 60,000+ endpoints.
-- **ð¡ï¸ Gov.uk Validation:** Automatically downloads the latest official UK Sponsor Register to filter companies.
-- **ð Pluggable Destinations:** Send newly found jobs to **Discord**, a **GitHub Gist**, or a **local SQLite database**.
-- **ð Streamlit Dashboards:** Includes a beautiful local dashboard to view your database, and a public-facing ad-hoc search app.
-- **ð°ï¸ Built-in Scheduler:** Run it once, or leave it running continuously in the background.
+## ✨ Features
+- **🌍 Multi-Tenant:** Configure unlimited profiles for yourself and friends in a single YAML file.
+- **⚡ Async Engine:** Blazing fast concurrent scraping of over 60,000+ endpoints.
+- **🛡️ Gov.uk Validation:** Automatically downloads the latest official UK Sponsor Register to filter companies.
+- **🔌 Pluggable Destinations:** Send newly found jobs to **Discord**, a **GitHub Gist**, or a **local SQLite database**.
+- **📊 Streamlit Dashboards:** Includes a beautiful local dashboard to view your database, and a public-facing ad-hoc search app.
+- **🕰️ Built-in Scheduler:** Run it once, or leave it running continuously in the background.
 
 ---
 
-## ð ï¸ Installation
+## 🛠️ Installation
 
 Sponsorship Scout is officially available on PyPI! You can install it using your preferred Python package manager.
 
@@ -55,7 +55,7 @@ pip install sponsorship-scout
 
 ---
 
-## ð Quick Start (Local CLI & Config)
+## 🚀 Quick Start (Local CLI & Config)
 
 The scraper uses a declarative `config.yaml` to define profiles and destinations.
 
@@ -73,9 +73,7 @@ profiles:
         table_name: "software_jobs"
       - type: discord
         webhook_url: "https://discord.com/api/webhooks/..."
-> **ð¡ Pro Tip on `industry_keywords`**: 
-> * **The Fast Path**: Specifying keywords like ["tech", "software"] filters the 127,000+ UK sponsors down to matching companies, making the CLI finish scraping in under 5 minutes.
-> * **God Mode**: If you set industry_keywords: [], the engine completely bypasses the filter and scans **all 127,000+ UK sponsors** against the ATS APIs. This guarantees you catch jobs from giants like Monzo or Revolut (who don't have "tech" in their legal name), but the scan will take around ~2.5 hours to complete.
+```
 
 ### 2. Run the CLI
 The `sponsorship-scout` command is now available in your terminal:
