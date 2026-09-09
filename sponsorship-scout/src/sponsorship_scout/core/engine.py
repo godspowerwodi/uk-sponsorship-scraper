@@ -17,27 +17,40 @@ async def fetch_with_sem(func, session, arg, sem):
 async def scan_companies(tenant_ids: Set[str], search_terms: List[str] = None) -> List[Dict]:
     search_terms = search_terms or []
     print(f"Scanning {len(tenant_ids)} companies asynchronously across {len(TENANT_SCRAPERS)} ATS platforms and {len(CENTRALIZED_SCRAPERS)} centralized scrapers...")
-    sem = asyncio.Semaphore(150)
-    connector = aiohttp.TCPConnector(limit=150) 
+    sem = asyncio.Semaphore(30)
+    connector = aiohttp.TCPConnector(limit=30) 
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
-    async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
-        tasks = []
-        for company in tenant_ids:
-            for scraper in TENANT_SCRAPERS:
-                tasks.append(fetch_with_sem(scraper, session, company, sem))
-        
-        for scraper in CENTRALIZED_SCRAPERS:
-            tasks.append(fetch_with_sem(scraper, session, search_terms, sem))
-                
-        results = await asyncio.gather(*tasks)
-        
     all_jobs = []
-    for company, jobs in results:
-        for job in jobs:
-            job['company'] = job.get('company') or company
-            job['added_date'] = datetime.now().strftime('%Y-%m-%d')
-            all_jobs.append(job)
+
+    async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
+        centralized_tasks = []
+        for scraper in CENTRALIZED_SCRAPERS:
+            centralized_tasks.append(fetch_with_sem(scraper, session, search_terms, sem))
+                
+        centralized_results = await asyncio.gather(*centralized_tasks)
+        for company, jobs in centralized_results:
+            for job in jobs:
+                job['company'] = job.get('company') or company
+                job['added_date'] = datetime.now().strftime('%Y-%m-%d')
+                all_jobs.append(job)
+
+        tenant_list = list(tenant_ids)
+        chunk_size = 5000
+        for i in range(0, len(tenant_list), chunk_size):
+            chunk = tenant_list[i:i + chunk_size]
+            print(f"Processing chunk {i//chunk_size + 1} of {(len(tenant_list) - 1)//chunk_size + 1} ({len(chunk)} tenants)...")
+            tenant_tasks = []
+            for company in chunk:
+                for scraper in TENANT_SCRAPERS:
+                    tenant_tasks.append(fetch_with_sem(scraper, session, company, sem))
+            
+            chunk_results = await asyncio.gather(*tenant_tasks)
+            for company, jobs in chunk_results:
+                for job in jobs:
+                    job['company'] = job.get('company') or company
+                    job['added_date'] = datetime.now().strftime('%Y-%m-%d')
+                    all_jobs.append(job)
             
     print(f"Scanned endpoints. Found {len(all_jobs)} total jobs.")
     return all_jobs

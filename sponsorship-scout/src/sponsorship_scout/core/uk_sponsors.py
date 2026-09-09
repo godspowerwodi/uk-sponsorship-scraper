@@ -43,11 +43,10 @@ def fetch_sponsors_and_generate_tenants(industry_keywords: Set[str]) -> Tuple[Di
                 if visa_route:
                     sponsors[raw_name].add(visa_route)
                 
-                if any(kw in raw_name for kw in industry_keywords):
-                    clean_name = raw_name.replace(" ltd", "").replace(" limited", "").replace(" uk", "")
-                    clean_name = re.sub(r'[^a-z0-9]', '', clean_name)
-                    if len(clean_name) > 3:
-                        tenant_ids.add(clean_name)
+                clean_name = raw_name.replace(" ltd", "").replace(" limited", "").replace(" uk", "")
+                clean_name = re.sub(r'[^a-z0-9]', '', clean_name)
+                if len(clean_name) > 3:
+                    tenant_ids.add(clean_name)
                         
         print(f"Loaded {len(sponsors)} licensed sponsors.")
         print(f"Generated {len(tenant_ids)} potential ATS tenant IDs from target industries.")
