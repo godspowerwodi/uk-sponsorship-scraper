@@ -84,9 +84,6 @@ async def run_engine(config: Config, search_terms: List[str] = None):
         for kw in profile.industry_keywords:
             master_keywords.add(kw.lower())
             
-    if not master_keywords:
-        master_keywords = {'tech', 'software', 'data', 'cloud'}
-        
     sponsors, tenant_ids = fetch_sponsors_and_generate_tenants(master_keywords)
     if not sponsors: return
     

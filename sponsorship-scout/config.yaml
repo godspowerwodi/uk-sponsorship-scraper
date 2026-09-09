@@ -2,6 +2,6 @@ profiles:
   - name: "GlobalScraper"
     target_terms: []
     target_locations: []
-    industry_keywords: ["tech", "software", "data", "finance", "health", "engineering", "consulting", "marketing", "sales"]
+    industry_keywords: []
     destinations:
       - type: supabase
