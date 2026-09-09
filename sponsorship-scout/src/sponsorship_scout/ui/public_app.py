@@ -32,6 +32,31 @@ div[data-testid="stMetricValue"] {
 
 import re
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_all_jobs_from_db():
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_KEY")
+    if not supabase_url or not supabase_key:
+        return []
+    try:
+        from supabase import create_client, Client
+        supabase: Client = create_client(supabase_url, supabase_key)
+        jobs = []
+        page_size = 1000
+        offset = 0
+        while True:
+            response = supabase.table("jobs").select("id, title, company, location, url, salary, visa_routes, created_at").range(offset, offset + page_size - 1).execute()
+            if not response.data:
+                break
+            jobs.extend(response.data)
+            if len(response.data) < page_size:
+                break
+            offset += page_size
+        return jobs
+    except Exception as e:
+        print(f"Failed to fetch jobs: {e}")
+        return []
+
 def parse_salary_and_check(salary_str: str) -> str:
     if not salary_str or not isinstance(salary_str, str):
         return '🟠 Amber'
@@ -83,31 +108,14 @@ if scan_button:
     locs = [l.strip().lower() for l in location.split(",") if l.strip()]
     
     with st.spinner("Fetching live jobs from our database..."):
-        supabase_url = os.environ.get("SUPABASE_URL")
-        supabase_key = os.environ.get("SUPABASE_KEY")
-        if not supabase_url or not supabase_key:
-            st.error("Database connection missing. Please configure SUPABASE_URL and SUPABASE_KEY.")
-            all_jobs = []
+        all_jobs = fetch_all_jobs_from_db()
+        if not all_jobs:
+            if not os.environ.get("SUPABASE_URL"):
+                st.error("Database connection missing. Please configure SUPABASE_URL and SUPABASE_KEY.")
+            else:
+                st.error("Failed to fetch jobs or database is empty.")
         else:
-            try:
-                supabase: Client = create_client(supabase_url, supabase_key)
-                
-                all_jobs = []
-                page_size = 1000
-                offset = 0
-                while True:
-                    response = supabase.table("jobs").select("*").range(offset, offset + page_size - 1).execute()
-                    if not response.data:
-                        break
-                    all_jobs.extend(response.data)
-                    if len(response.data) < page_size:
-                        break
-                    offset += page_size
-                    
-                st.info(f"Loaded **{len(all_jobs)}** sponsored jobs from the database.")
-            except Exception as e:
-                st.error(f"Failed to fetch jobs: {e}")
-                all_jobs = []
+            st.info(f"Loaded **{len(all_jobs)}** sponsored jobs from the database.")
 
     if all_jobs:
         broad_uk_terms = {"uk", "gb", "united kingdom"}
@@ -184,7 +192,23 @@ if scan_button:
                     from sklearn.metrics.pairwise import cosine_similarity
                     vectorizer = TfidfVectorizer(stop_words='english')
                     
-                    descriptions = [cv_text] + [str(j.get('description') or j.get('title') or '') for j in new_jobs]
+                    # LAZY FETCH DESCRIPTIONS FOR MATCHED JOBS ONLY
+                    job_ids = [j['id'] for j in new_jobs if 'id' in j]
+                    descriptions_map = {}
+                    if job_ids:
+                        supabase_url = os.environ.get("SUPABASE_URL")
+                        supabase_key = os.environ.get("SUPABASE_KEY")
+                        if supabase_url and supabase_key:
+                            from supabase import create_client, Client
+                            supabase: Client = create_client(supabase_url, supabase_key)
+                            for i in range(0, len(job_ids), 100):
+                                chunk_ids = job_ids[i:i+100]
+                                desc_resp = supabase.table("jobs").select("id, description").in_("id", chunk_ids).execute()
+                                if desc_resp.data:
+                                    for row in desc_resp.data:
+                                        descriptions_map[row['id']] = row.get('description', '')
+
+                    descriptions = [cv_text] + [str(descriptions_map.get(j.get('id'), j.get('title')) or j.get('title') or '') for j in new_jobs]
                     tfidf_matrix = vectorizer.fit_transform(descriptions)
                     
                     cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
