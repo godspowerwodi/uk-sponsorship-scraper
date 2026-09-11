@@ -10,7 +10,7 @@ async def fetch_smartrecruiters(session: aiohttp.ClientSession, company: str) ->
                 for j in data.get('content', []):
                     loc_name = j.get('location', {}).get('city') or ''
                     url = f"https://jobs.smartrecruiters.com/{company}/{j.get('id') or ''}"
-                    jobs.append({'title': j.get('name') or '', 'location': loc_name, 'url': url})
+                    jobs.append({'title': j.get('name') or '', 'location': loc_name, 'url': url, 'salary': ''})
                 return company, jobs
     except: pass
     return company, []

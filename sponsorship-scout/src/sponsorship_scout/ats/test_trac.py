@@ -1,6 +1,6 @@
 import asyncio
 import aiohttp
-from tracjobs import fetch_tracjobs
+from sponsorship_scout.ats.tracjobs import fetch_tracjobs, _parse_tracjobs_html
 
 async def main():
     async with aiohttp.ClientSession() as s:

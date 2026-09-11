@@ -7,7 +7,7 @@ class DestinationBase(BaseModel):
 
 class DiscordDestination(DestinationBase):
     type: Literal["discord"]
-    webhook_url: str
+    webhook_url: Optional[str] = None
 
 class GistDestination(DestinationBase):
     type: Literal["gist"]
@@ -18,7 +18,10 @@ class SqliteDestination(DestinationBase):
     type: Literal["sqlite"]
     table_name: str
 
-DestinationType = Union[DiscordDestination, GistDestination, SqliteDestination]
+class SupabaseDestination(DestinationBase):
+    type: Literal["supabase"]
+
+DestinationType = Union[DiscordDestination, GistDestination, SqliteDestination, SupabaseDestination]
 
 class Profile(BaseModel):
     name: str

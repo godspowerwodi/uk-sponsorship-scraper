@@ -1,8 +1,7 @@
 profiles:
-  - name: "TestUser"
-    target_terms: ["software", "data"]
-    target_locations: ["london"]
-    industry_keywords: ["tech", "software"]
+  - name: "GlobalScraper"
+    target_terms: []
+    target_locations: []
+    industry_keywords: []
     destinations:
-      - type: sqlite
-        table_name: "test_jobs"
+      - type: supabase
