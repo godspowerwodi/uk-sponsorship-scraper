@@ -277,7 +277,7 @@ st.markdown(
         <p style="margin-bottom: 8px; color: #86868b; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">See other toolz built by me</p>
         <h3 style="margin-bottom: 16px; color: #1d1d1f; font-size: 28px; font-weight: 600; letter-spacing: -0.01em;">Pro tools. Everyday magic.</h3>
         <p style="margin-bottom: 24px; color: #515154; font-size: 17px; line-height: 1.5; max-width: 500px; margin-left: auto; margin-right: auto;">
-            Meet <b>ToolzHub</b>. A meticulously crafted ecosystem designed to effortlessly bypass news paywalls and transform complex web tables into pristine spreadsheets. Brilliance, right at your fingertips.
+            Meet <b>ToolzHub</b>. A constantly expanding ecosystem of micro-tools designed to remove digital friction from your day. From bypassing news paywalls to transforming complex web tables into pristine spreadsheets-we build cheat codes for the modern web.
         </p>
         <a href="https://tinytoolzhub.org" target="_blank" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; border-radius: 980px; text-decoration: none; font-weight: 400; font-size: 16px; transition: all 0.3s ease;">Explore ToolzHub</a>
     </div>
