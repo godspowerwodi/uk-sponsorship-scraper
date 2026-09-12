@@ -21,6 +21,19 @@ st.markdown("""
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0,0,0,0.15);
 }
+/* Primary button custom color (ToolzHub blue) */
+.stButton button[kind="primary"],
+.stButton button[data-testid="baseButton-primary"],
+.stButton button[data-testid="stBaseButton-primary"] {
+    background-color: #4f46e5 !important;
+    color: white !important;
+    border: none !important;
+}
+.stButton button[kind="primary"]:hover,
+.stButton button[data-testid="baseButton-primary"]:hover,
+.stButton button[data-testid="stBaseButton-primary"]:hover {
+    background-color: #4338ca !important;
+}
 h1, h2, h3 {
     color: #1E3A8A;
 }
@@ -260,11 +273,13 @@ if scan_button:
 
 st.markdown(
     """
-    <div style="background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #a5b4fc; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <p style="margin-bottom: 8px; color: #1e3a8a; font-size: 14px; font-weight: 600;">Other tools built by me. Need to do deep research?</p>
-        <p style="margin-bottom: 10px; color: #3730a3; font-size: 15px; font-weight: 700;">Check out ToolzHub 🧰</p>
-        <p style="margin-bottom: 15px; color: #4338ca; font-size: 13px; line-height: 1.4;">A growing ecosystem of free micro-tools. Instantly bypass news paywalls and convert web HTML tables into clean Excel spreadsheets.</p>
-        <a href="https://tinytoolzhub.org" target="_blank" style="display: block; text-align: center; background-color: #4f46e5; color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background-color 0.3s;">Visit ToolzHub</a>
+    <div style="background-color: #f5f5f7; padding: 40px 20px; border-radius: 16px; margin-top: 40px; text-align: center;">
+        <p style="margin-bottom: 8px; color: #86868b; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">See other toolz built by me</p>
+        <h3 style="margin-bottom: 16px; color: #1d1d1f; font-size: 28px; font-weight: 600; letter-spacing: -0.01em;">Pro tools. Everyday magic.</h3>
+        <p style="margin-bottom: 24px; color: #515154; font-size: 17px; line-height: 1.5; max-width: 500px; margin-left: auto; margin-right: auto;">
+            Meet <b>ToolzHub</b>. A meticulously crafted ecosystem designed to effortlessly bypass news paywalls and transform complex web tables into pristine spreadsheets. Brilliance, right at your fingertips.
+        </p>
+        <a href="https://tinytoolzhub.org" target="_blank" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; border-radius: 980px; text-decoration: none; font-weight: 400; font-size: 16px; transition: all 0.3s ease;">Explore ToolzHub</a>
     </div>
     """,
     unsafe_allow_html=True
