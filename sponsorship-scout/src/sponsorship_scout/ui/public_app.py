@@ -258,3 +258,15 @@ if scan_button:
         else:
             st.warning("No sponsored jobs found matching your criteria.")
 
+st.sidebar.markdown(
+    """
+    <div style="background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #a5b4fc; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <p style="margin-bottom: 8px; color: #1e3a8a; font-size: 14px; font-weight: 600;">Built by GP Wodi. Need to do deep research?</p>
+        <p style="margin-bottom: 10px; color: #3730a3; font-size: 15px; font-weight: 700;">Check out ToolzHub 🧰</p>
+        <p style="margin-bottom: 15px; color: #4338ca; font-size: 13px; line-height: 1.4;">A growing ecosystem of free micro-tools. Instantly bypass news paywalls and convert web HTML tables into clean Excel spreadsheets.</p>
+        <a href="https://tinytoolzhub.org" target="_blank" style="display: block; text-align: center; background-color: #4f46e5; color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background-color 0.3s;">Visit ToolzHub</a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
