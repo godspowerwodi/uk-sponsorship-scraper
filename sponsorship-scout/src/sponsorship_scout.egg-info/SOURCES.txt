@@ -1,3 +1,4 @@
+README.md
 pyproject.toml
 src/sponsorship_scout/__init__.py
 src/sponsorship_scout/cli.py
