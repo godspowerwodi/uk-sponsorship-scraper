@@ -9,7 +9,14 @@ from supabase import create_client, Client
 st.set_page_config(page_title="UK Sponsorship Job Scout", layout="wide", page_icon="💼")
 
 st.markdown("""
+
 <style>
+/* Hide Streamlit header (hamburger menu) and footer (watermark) */
+header {visibility: hidden !important;}
+footer {visibility: hidden !important;}
+/* Hide full screen button just in case */
+button[title="View fullscreen"] {display: none !important;}
+
 /* Professional Startup Style */
 .stButton>button {
     border-radius: 8px;
