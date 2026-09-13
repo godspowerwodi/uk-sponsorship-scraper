@@ -9,7 +9,14 @@ from supabase import create_client, Client
 st.set_page_config(page_title="UK Sponsorship Job Scout", layout="wide", page_icon="💼")
 
 st.markdown("""
+
 <style>
+/* Hide Streamlit header (hamburger menu) and footer (watermark) */
+header {visibility: hidden !important;}
+footer {visibility: hidden !important;}
+/* Hide full screen button just in case */
+button[title="View fullscreen"] {display: none !important;}
+
 /* Professional Startup Style */
 .stButton>button {
     border-radius: 8px;
@@ -281,6 +288,7 @@ st.markdown(
         </p>
         <a href="https://tinytoolzhub.org" target="_blank" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; border-radius: 980px; text-decoration: none; font-weight: 400; font-size: 16px; transition: all 0.3s ease;">Explore ToolzHub</a>
     </div>
+    <div style="height: 65px;"></div>
     """,
     unsafe_allow_html=True
 )

@@ -54,14 +54,14 @@ def send_to_supabase(jobs: List[Dict]):
             print(f"[Supabase] Successfully upserted {len(records)} jobs to Supabase in batches of {batch_size}.")
             
             three_days_ago_string = (datetime.utcnow() - timedelta(days=3)).isoformat()
-            thirty_days_ago_string = (datetime.utcnow() - timedelta(days=30)).isoformat()
+            forty_five_days_ago_string = (datetime.utcnow() - timedelta(days=45)).isoformat()
             
             # 1. Purge Dead Jobs (removed from API)
-            supabase.table("jobs").delete().lt("last_seen_at", three_days_ago_string).execute()
+            supabase.table("jobs").delete().lt("last_seen_at", three_days_ago_string).filter("url", "not.ilike", "%jobs.nhs.uk%").execute()
             
             # 2. Purge Ghost Jobs (stale on API)
-            supabase.table("jobs").delete().lt("created_at", thirty_days_ago_string).execute()
+            supabase.table("jobs").delete().lt("created_at", forty_five_days_ago_string).execute()
             
-            print(f"[Supabase] Cleaned up dead jobs (>3 days unseen) and ghost jobs (>30 days old).")
+            print(f"[Supabase] Cleaned up dead jobs (>3 days unseen) and ghost jobs (>45 days old).")
         except Exception as e:
             print(f"[Supabase] Error upserting/deleting jobs: {e}")
