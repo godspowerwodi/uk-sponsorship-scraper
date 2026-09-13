@@ -288,6 +288,7 @@ st.markdown(
         </p>
         <a href="https://tinytoolzhub.org" target="_blank" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; border-radius: 980px; text-decoration: none; font-weight: 400; font-size: 16px; transition: all 0.3s ease;">Explore ToolzHub</a>
     </div>
+    <div style="height: 65px;"></div>
     """,
     unsafe_allow_html=True
 )
