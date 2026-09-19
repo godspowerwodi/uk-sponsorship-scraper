@@ -115,8 +115,8 @@ with col4:
     salary_threshold = st.selectbox("Salary Threshold", ["Any", "Meets Threshold or Unknown", "Strictly Meets Threshold"])
 
 cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against full job descriptions.")
-st.caption("This will calculate a TF-IDF Cosine Similarity match score against the full job description.")
 st.caption("Your CV is temporarily securely stored for 24 hours to enable cross-platform AI ATS Optimization, after which it is permanently deleted. We do not sell or use this data for any other purpose.")
+st.caption("This will calculate a TF-IDF Cosine Similarity match score against the full job description.")
 
 st.markdown("<br>", unsafe_allow_html=True)
 btn_col1, btn_col2, btn_col3 = st.columns([1, 2, 1])
