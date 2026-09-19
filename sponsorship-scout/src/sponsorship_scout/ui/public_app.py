@@ -226,6 +226,7 @@ if scan_button:
                         supabase_key = os.environ.get("SUPABASE_KEY")
                         if supabase_url and supabase_key:
                             from supabase import create_client, Client
+                            import concurrent.futures
                             supabase: Client = create_client(supabase_url, supabase_key)
                             
                             try:
@@ -235,11 +236,19 @@ if scan_button:
                             except Exception as e:
                                 st.warning(f"Failed to store CV temporarily: {e}")
                                 
-                            for i in range(0, len(job_ids), 100):
-                                chunk_ids = job_ids[i:i+100]
-                                desc_resp = supabase.table("jobs").select("id, description").in_("id", chunk_ids).execute()
-                                if desc_resp.data:
-                                    for row in desc_resp.data:
+                            def fetch_chunk(chunk):
+                                try:
+                                    resp = supabase.table("jobs").select("id, description").in_("id", chunk).execute()
+                                    return resp.data if resp.data else []
+                                except Exception as e:
+                                    print(f"Failed to fetch chunk: {e}")
+                                    return []
+
+                            chunks = [job_ids[i:i+300] for i in range(0, len(job_ids), 300)]
+                            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                                futures = [executor.submit(fetch_chunk, c) for c in chunks]
+                                for future in concurrent.futures.as_completed(futures):
+                                    for row in future.result():
                                         descriptions_map[row['id']] = row.get('description', '')
 
                     descriptions = [cv_text] + [str(descriptions_map.get(j.get('id'), j.get('title')) or j.get('title') or '') for j in new_jobs]
