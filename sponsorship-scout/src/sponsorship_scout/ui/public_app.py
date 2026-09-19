@@ -263,7 +263,7 @@ if scan_button:
                         for job in new_jobs:
                             jd_text = str(descriptions_map.get(job.get('id'), job.get('title')) or job.get('title') or '')
                             try:
-                                vec = CountVectorizer(stop_words=custom_stops, ngram_range=(1, 2), max_features=20)
+                                vec = CountVectorizer(stop_words=custom_stops, ngram_range=(1, 2), max_features=30)
                                 vec.fit([jd_text])
                                 keywords = vec.get_feature_names_out()
                                 matches = sum(1 for kw in keywords if re.search(rf'\b{re.escape(kw)}\b', cv_lower))
@@ -273,11 +273,11 @@ if scan_button:
                             
                             job['CV Match Score'] = f"{score:.1f}%"
                             job['_raw_score'] = score
-                            if score >= 65:
+                            if score >= 95:
                                 job['ATS Status'] = "✅ Strong Match"
                             else:
                                 job['ATS Status'] = "⚠️ Low Score (Fails ATS)"
-                            if score < 65:
+                            if score < 95:
                                 import urllib.parse
                                 encoded_url = urllib.parse.quote_plus(job.get('url') or '')
                                 job['Boost ATS Score'] = f"https://tinytoolz-hub.onrender.com/ats-matcher?utm_source=sponsorship_scout_table&cv_id={cv_uuid}&job_url={encoded_url}"
