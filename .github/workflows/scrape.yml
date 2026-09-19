@@ -1,4 +1,4 @@
-name: Scrape Jobs (Prod and Dev)
+name: Scrape Jobs (Prod)
 
 on:
   schedule:
@@ -22,27 +22,6 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.PROD_SUPABASE_KEY }}
-
-        run: |
-          cd sponsorship-scout
-          uv run python -m sponsorship_scout.cli run
-
-  scrape-dev:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: dev
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: "latest"
-      - name: Install dependencies
-        run: cd sponsorship-scout && uv venv && uv pip install -e .
-      - name: Run Scraper
-        env:
-          SUPABASE_URL: ${{ secrets.DEV_SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.DEV_SUPABASE_KEY }}
 
         run: |
           cd sponsorship-scout
