@@ -115,8 +115,8 @@ with col4:
     salary_threshold = st.selectbox("Salary Threshold", ["Any", "Meets Threshold or Unknown", "Strictly Meets Threshold"])
 
 cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against full job descriptions.")
-st.caption("Your CV is temporarily securely stored for 24 hours to enable cross-platform AI ATS Optimization, after which it is permanently deleted. We do not sell or use this data for any other purpose.")
 st.caption("This will calculate a TF-IDF Cosine Similarity match score against the full job description.")
+st.markdown("<p style='font-size: 11px; color: #888; margin-top: -10px;'>Your CV is temporarily securely stored for 24 hours to enable cross-platform AI ATS Optimization, after which it is permanently deleted. We do not sell or use this data for any other purpose. For peace of mind, feel free to omit your name and contact info before pasting.</p>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 btn_col1, btn_col2, btn_col3 = st.columns([1, 2, 1])
@@ -125,6 +125,10 @@ with btn_col2:
 st.divider()
 
 if scan_button:
+    if 0 < len(cv_text.strip()) < 300:
+        cv_text = ""
+        st.warning("⚠️ The text provided is too short to be a valid CV. Proceeding with standard job search without ATS scoring.")
+        
     titles = [t.strip().lower() for t in job_title.split(",") if t.strip()]
     locs = [l.strip().lower() for l in location.split(",") if l.strip()]
     
