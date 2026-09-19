@@ -237,9 +237,16 @@ if scan_button:
                                 st.warning(f"Failed to store CV temporarily: {e}")
                                 
                             def fetch_chunk(chunk):
+                                results = []
                                 try:
-                                    resp = supabase.table("jobs").select("id, description").in_("id", chunk).execute()
-                                    return resp.data if resp.data else []
+                                    # Split the 300-item chunk internally into 150-item sub-chunks 
+                                    # to avoid hitting Kong's 8KB URI limit with 300 UUIDs (~11KB)
+                                    for i in range(0, len(chunk), 150):
+                                        sub_chunk = chunk[i:i+150]
+                                        resp = supabase.table("jobs").select("id, description").in_("id", sub_chunk).execute()
+                                        if resp.data:
+                                            results.extend(resp.data)
+                                    return results
                                 except Exception as e:
                                     print(f"Failed to fetch chunk: {e}")
                                     return []
