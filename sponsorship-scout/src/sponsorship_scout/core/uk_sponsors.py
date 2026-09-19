@@ -57,8 +57,19 @@ def fetch_sponsors_and_generate_tenants(industry_keywords: Set[str]) -> Tuple[Di
         print(f"Error fetching sponsors: {e}")
         return {}, set()
 
+CUSTOM_COMPANY_MAPPING = {
+    "wise": "wise payments limited",
+    "meta": "meta platforms",
+    "google": "google uk",
+    "monzo": "monzo bank",
+    "revolut": "revolut ltd",
+    "amazon": "amazon uk services"
+}
+
 def is_sponsored(company_name: str, sponsors_dict: Dict[str, Set[str]]) -> Tuple[bool, List[str]]:
     company_norm = company_name.strip().lower()
+    if company_norm in CUSTOM_COMPANY_MAPPING:
+        company_norm = CUSTOM_COMPANY_MAPPING[company_norm]
     if company_norm in sponsors_dict:
         return True, list(sponsors_dict[company_norm])
     for s, routes in sponsors_dict.items():
