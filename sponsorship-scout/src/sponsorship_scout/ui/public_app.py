@@ -247,7 +247,11 @@ if scan_button:
                         score = cosine_similarities[i] * 100
                         job['CV Match Score'] = f"{score:.1f}%"
                         job['_raw_score'] = score
-                        if score < 50:
+                        if score >= 65:
+                            job['ATS Status'] = "✅ Strong Match"
+                        else:
+                            job['ATS Status'] = "⚠️ Low Score (Fails ATS)"
+                        if score < 65:
                             import urllib.parse
                             encoded_url = urllib.parse.quote_plus(job.get('url') or '')
                             job['Boost ATS Score'] = f"https://tinytoolzhub.org/ats-matcher?utm_source=sponsorship_scout_table&cv_id={cv_uuid}&job_url={encoded_url}"
@@ -271,7 +275,7 @@ if scan_button:
             if exact_matches:
                 st.success(f"Found {len(exact_matches)} exact matches!")
                 df_exact = pd.DataFrame(exact_matches)
-                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'Boost ATS Score', 'created_at']
+                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'created_at']
                 df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols and c not in ('description', '_raw_score', 'id')]]
                 
                 col1, col2 = st.columns(2)
@@ -279,6 +283,9 @@ if scan_button:
                     st.metric("Total Exact Matches", len(df_exact))
                 with col2:
                     st.metric("Unique Companies", df_exact['company'].nunique())
+                    
+                if '_raw_score' in df_exact.columns and (df_exact['_raw_score'] < 65).any():
+                    st.error("🚨 **Your CV is failing the automated ATS screen for some of these jobs.** Your resume is missing critical keywords. Companies use Applicant Tracking Systems to automatically reject CVs that don't match the Job Description. 👉 **Click the '⚠️ Optimize CV' link in the table below to have our AI automatically rewrite your CV for that specific role.**")
                     
                 st.dataframe(df_exact, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link"), "Boost ATS Score": st.column_config.LinkColumn("Boost ATS Score", display_text="⚠️ Optimize CV")}, hide_index=True)
             else:
@@ -288,8 +295,12 @@ if scan_button:
                 if exact_matches:
                     st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
                 df_broad = pd.DataFrame(broader_matches)
-                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'Boost ATS Score', 'created_at']
+                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'created_at']
                 df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols and c not in ('description', '_raw_score', 'id')]]
+                
+                if '_raw_score' in df_broad.columns and (df_broad['_raw_score'] < 65).any():
+                    st.error("🚨 **Your CV is failing the automated ATS screen for some of these jobs.** Your resume is missing critical keywords. Companies use Applicant Tracking Systems to automatically reject CVs that don't match the Job Description. 👉 **Click the '⚠️ Optimize CV' link in the table below to have our AI automatically rewrite your CV for that specific role.**")
+                    
                 st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link"), "Boost ATS Score": st.column_config.LinkColumn("Boost ATS Score", display_text="⚠️ Optimize CV")}, hide_index=True)
         else:
             st.warning("No sponsored jobs found matching your criteria.")
