@@ -120,16 +120,28 @@ st.caption("This runs a strict ATS keyword algorithm against the full job descri
 st.markdown("<p style='font-size: 11px; color: #888; margin-top: -10px;'>(Your CV is temporarily securely stored for 24 hours to enable cross-platform AI ATS Optimization, after which it is permanently deleted. We do not sell or use this data for any other purpose. For peace of mind, feel free to omit your name and contact info before pasting.)</p>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
+if 'is_searching' not in st.session_state:
+    st.session_state.is_searching = False
+if 'search_done' not in st.session_state:
+    st.session_state.search_done = False
+if 'search_messages' not in st.session_state:
+    st.session_state.search_messages = []
+    
+def trigger_search():
+    st.session_state.is_searching = True
+    st.session_state.search_done = False
+    st.session_state.search_messages = []
+
 btn_col1, btn_col2, btn_col3 = st.columns([1, 2, 1])
 with btn_col2:
-    scan_button = st.button("🚀 Find Sponsored Jobs", type="primary", width="stretch")
+    st.button("🚀 Find Sponsored Jobs", type="primary", use_container_width=True, disabled=st.session_state.is_searching, on_click=trigger_search)
 st.divider()
 
-if scan_button:
+if st.session_state.is_searching:
     with st.spinner("🚀 Searching database and analyzing CV..."):
         if 0 < len(cv_text.strip()) < 300:
             cv_text = ""
-            st.warning("⚠️ The text provided is too short to be a valid CV. Proceeding with standard job search without ATS scoring.")
+            st.session_state.search_messages.append(("warning", "⚠️ The text provided is too short to be a valid CV. Proceeding with standard job search without ATS scoring."))
         
         titles = [t.strip().lower() for t in job_title.split(",") if t.strip()]
         locs = [l.strip().lower() for l in location.split(",") if l.strip()]
@@ -137,11 +149,11 @@ if scan_button:
         all_jobs = fetch_all_jobs_from_db()
         if not all_jobs:
             if not os.environ.get("SUPABASE_URL"):
-                st.error("Database connection missing. Please configure SUPABASE_URL and SUPABASE_KEY.")
+                st.session_state.search_messages.append(("error", "Database connection missing. Please configure SUPABASE_URL and SUPABASE_KEY."))
             else:
-                st.error("Failed to fetch jobs or database is empty.")
+                st.session_state.search_messages.append(("error", "Failed to fetch jobs or database is empty."))
         else:
-            st.info(f"Loaded **{len(all_jobs)}** sponsored jobs from the database.")
+            st.session_state.search_messages.append(("info", f"Loaded **{len(all_jobs)}** sponsored jobs from the database."))
 
         if all_jobs:
             broad_uk_terms = {"uk", "gb", "united kingdom"}
@@ -236,7 +248,7 @@ if scan_button:
                                     if cv_insert.data:
                                         cv_uuid = cv_insert.data[0].get("id", "")
                                 except Exception as e:
-                                    st.warning(f"Failed to store CV temporarily: {e}")
+                                    st.session_state.search_messages.append(("warning", f"Failed to store CV temporarily: {e}"))
                                 
                                 def fetch_chunk(chunk):
                                     results = []
@@ -286,7 +298,7 @@ if scan_button:
                         
                         new_jobs.sort(key=lambda x: x.get('_raw_score', 0), reverse=True)
                     except Exception as e:
-                        st.warning(f"Could not calculate CV match score: {e}")
+                        st.session_state.search_messages.append(("warning", f"Could not calculate CV match score: {e}"))
 
                 exact_matches = []
                 broader_matches = []
@@ -298,38 +310,64 @@ if scan_button:
                     else:
                         broader_matches.append(job)
             
-                if exact_matches:
-                    st.success(f"Found {len(exact_matches)} exact matches!")
-                    df_exact = pd.DataFrame(exact_matches)
-                    cols = ['company', 'title', 'location', 'url', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'routes', 'created_at']
-                    df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols and c not in ('description', '_raw_score', 'id', 'visa_routes')]]
-                
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("Total Exact Matches", len(df_exact))
-                    with col2:
-                        st.metric("Unique Companies", df_exact['company'].nunique())
-                    
-                    if 'ATS Status' in df_exact.columns and (df_exact['ATS Status'] == "⚠️ Low Score (Fails ATS)").any():
-                        st.error("🚨 **Your CV is failing the automated ATS screen for some of these jobs.** Your resume is missing critical keywords. Companies use Applicant Tracking Systems to automatically reject CVs that don't match the Job Description. 👉 **Click the '⚠️ Optimize CV' link in the table below to have our AI automatically rewrite your CV for that specific role.**")
-                    
-                    st.dataframe(df_exact, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link"), "Boost ATS Score": st.column_config.LinkColumn("Boost ATS Score", display_text="⚠️ Optimize CV")}, hide_index=True)
-                else:
-                    st.warning("We couldn't find an exact match for your search, but here are other roles like it:")
-                
-                if broader_matches:
-                    if exact_matches:
-                        st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
-                    df_broad = pd.DataFrame(broader_matches)
-                    cols = ['company', 'title', 'location', 'url', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'routes', 'created_at']
-                    df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols and c not in ('description', '_raw_score', 'id', 'visa_routes')]]
-                
-                    if 'ATS Status' in df_broad.columns and (df_broad['ATS Status'] == "⚠️ Low Score (Fails ATS)").any():
-                        st.error("🚨 **Your CV is failing the automated ATS screen for some of these jobs.** Your resume is missing critical keywords. Companies use Applicant Tracking Systems to automatically reject CVs that don't match the Job Description. 👉 **Click the '⚠️ Optimize CV' link in the table below to have our AI automatically rewrite your CV for that specific role.**")
-                    
-                    st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link"), "Boost ATS Score": st.column_config.LinkColumn("Boost ATS Score", display_text="⚠️ Optimize CV")}, hide_index=True)
+                st.session_state.exact_matches = exact_matches
+                st.session_state.broader_matches = broader_matches
             else:
-                st.warning("No sponsored jobs found matching your criteria.")
+                st.session_state.exact_matches = []
+                st.session_state.broader_matches = []
+        else:
+            st.session_state.exact_matches = []
+            st.session_state.broader_matches = []
+
+        st.session_state.is_searching = False
+        st.session_state.search_done = True
+        st.rerun()
+
+if st.session_state.search_done:
+    for msg_type, msg in st.session_state.get('search_messages', []):
+        if msg_type == "warning":
+            st.warning(msg)
+        elif msg_type == "error":
+            st.error(msg)
+        elif msg_type == "info":
+            st.info(msg)
+            
+    exact_matches = st.session_state.get('exact_matches', [])
+    broader_matches = st.session_state.get('broader_matches', [])
+    
+    if exact_matches or broader_matches:
+        if exact_matches:
+            st.success(f"Found {len(exact_matches)} exact matches!")
+            df_exact = pd.DataFrame(exact_matches)
+            cols = ['company', 'title', 'location', 'url', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'routes', 'created_at']
+            df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols and c not in ('description', '_raw_score', 'id', 'visa_routes')]]
+        
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Total Exact Matches", len(df_exact))
+            with col2:
+                st.metric("Unique Companies", df_exact['company'].nunique())
+            
+            if 'ATS Status' in df_exact.columns and (df_exact['ATS Status'] == "⚠️ Low Score (Fails ATS)").any():
+                st.error("🚨 **Your CV is failing the automated ATS screen for some of these jobs.** Your resume is missing critical keywords. Companies use Applicant Tracking Systems to automatically reject CVs that don't match the Job Description. 👉 **Click the '⚠️ Optimize CV' link in the table below to have our AI automatically rewrite your CV for that specific role.**")
+            
+            st.dataframe(df_exact, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link"), "Boost ATS Score": st.column_config.LinkColumn("Boost ATS Score", display_text="⚠️ Optimize CV")}, hide_index=True)
+        else:
+            st.warning("We couldn't find an exact match for your search, but here are other roles like it:")
+        
+        if broader_matches:
+            if exact_matches:
+                st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
+            df_broad = pd.DataFrame(broader_matches)
+            cols = ['company', 'title', 'location', 'url', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'routes', 'created_at']
+            df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols and c not in ('description', '_raw_score', 'id', 'visa_routes')]]
+        
+            if 'ATS Status' in df_broad.columns and (df_broad['ATS Status'] == "⚠️ Low Score (Fails ATS)").any():
+                st.error("🚨 **Your CV is failing the automated ATS screen for some of these jobs.** Your resume is missing critical keywords. Companies use Applicant Tracking Systems to automatically reject CVs that don't match the Job Description. 👉 **Click the '⚠️ Optimize CV' link in the table below to have our AI automatically rewrite your CV for that specific role.**")
+            
+            st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link"), "Boost ATS Score": st.column_config.LinkColumn("Boost ATS Score", display_text="⚠️ Optimize CV")}, hide_index=True)
+    else:
+        st.warning("No sponsored jobs found matching your criteria.")
 
     components.html(
         """
