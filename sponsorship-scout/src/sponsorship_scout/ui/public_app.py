@@ -116,7 +116,7 @@ with col4:
     salary_threshold = st.selectbox("Salary Threshold", ["Any", "Meets Threshold or Unknown", "Strictly Meets Threshold"])
 
 cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against full job descriptions.", max_chars=50000)
-st.caption("This will calculate a TF-IDF Cosine Similarity match score against the full job description.")
+st.caption("This runs a strict ATS Keyword Match against the top requirements in the full job description.")
 st.markdown("<p style='font-size: 11px; color: #888; margin-top: -10px;'>(Your CV is temporarily securely stored for 24 hours to enable cross-platform AI ATS Optimization, after which it is permanently deleted. We do not sell or use this data for any other purpose. For peace of mind, feel free to omit your name and contact info before pasting.)</p>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -214,9 +214,10 @@ if scan_button:
             if new_jobs:
                 if cv_text.strip():
                     try:
-                        from sklearn.feature_extraction.text import TfidfVectorizer
-                        from sklearn.metrics.pairwise import cosine_similarity
-                        vectorizer = TfidfVectorizer(stop_words='english')
+                        from sklearn.feature_extraction.text import CountVectorizer
+                        base_stops = list(CountVectorizer(stop_words='english').get_stop_words())
+                        custom_stops = base_stops + ['experience', 'team', 'role', 'work', 'working', 'company', 'skills', 'looking', 'years', 'business', 'using', 'new', 'support', 'including', 'development', 'opportunity', 'join', 'strong', 'knowledge', 'good', 'ability', 'required', 'excellent', 'ensure', 'help', 'provide', 'understanding', 'design', 'building', 'based', 'time', 'people', 'environment', 'learning', 'best', 'solutions', 'project', 'projects', 'within', 'across', 'key', 'day', 'will']
+                        cv_lower = cv_text.lower()
                     
                         # LAZY FETCH DESCRIPTIONS FOR MATCHED JOBS ONLY
                         job_ids = [j['id'] for j in new_jobs if 'id' in j]
@@ -259,13 +260,17 @@ if scan_button:
                                         for row in future.result():
                                             descriptions_map[row['id']] = row.get('description', '')
 
-                        descriptions = [cv_text] + [str(descriptions_map.get(j.get('id'), j.get('title')) or j.get('title') or '') for j in new_jobs]
-                        tfidf_matrix = vectorizer.fit_transform(descriptions)
-                    
-                        cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
-                    
-                        for i, job in enumerate(new_jobs):
-                            score = cosine_similarities[i] * 100
+                        for job in new_jobs:
+                            jd_text = str(descriptions_map.get(job.get('id'), job.get('title')) or job.get('title') or '')
+                            try:
+                                vec = CountVectorizer(stop_words=custom_stops, ngram_range=(1, 2), max_features=20)
+                                vec.fit([jd_text])
+                                keywords = vec.get_feature_names_out()
+                                matches = sum(1 for kw in keywords if kw in cv_lower)
+                                score = (matches / len(keywords)) * 100 if len(keywords) > 0 else 0.0
+                            except ValueError:
+                                score = 0.0
+                            
                             job['CV Match Score'] = f"{score:.1f}%"
                             job['_raw_score'] = score
                             if score >= 65:
