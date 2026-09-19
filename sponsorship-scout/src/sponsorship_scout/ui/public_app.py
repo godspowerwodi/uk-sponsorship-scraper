@@ -284,7 +284,7 @@ if scan_button:
                 with col2:
                     st.metric("Unique Companies", df_exact['company'].nunique())
                     
-                if '_raw_score' in df_exact.columns and (df_exact['_raw_score'] < 65).any():
+                if 'ATS Status' in df_exact.columns and (df_exact['ATS Status'] == "⚠️ Low Score (Fails ATS)").any():
                     st.error("🚨 **Your CV is failing the automated ATS screen for some of these jobs.** Your resume is missing critical keywords. Companies use Applicant Tracking Systems to automatically reject CVs that don't match the Job Description. 👉 **Click the '⚠️ Optimize CV' link in the table below to have our AI automatically rewrite your CV for that specific role.**")
                     
                 st.dataframe(df_exact, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link"), "Boost ATS Score": st.column_config.LinkColumn("Boost ATS Score", display_text="⚠️ Optimize CV")}, hide_index=True)
@@ -298,7 +298,7 @@ if scan_button:
                 cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'created_at']
                 df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols and c not in ('description', '_raw_score', 'id')]]
                 
-                if '_raw_score' in df_broad.columns and (df_broad['_raw_score'] < 65).any():
+                if 'ATS Status' in df_broad.columns and (df_broad['ATS Status'] == "⚠️ Low Score (Fails ATS)").any():
                     st.error("🚨 **Your CV is failing the automated ATS screen for some of these jobs.** Your resume is missing critical keywords. Companies use Applicant Tracking Systems to automatically reject CVs that don't match the Job Description. 👉 **Click the '⚠️ Optimize CV' link in the table below to have our AI automatically rewrite your CV for that specific role.**")
                     
                 st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link"), "Boost ATS Score": st.column_config.LinkColumn("Boost ATS Score", display_text="⚠️ Optimize CV")}, hide_index=True)
