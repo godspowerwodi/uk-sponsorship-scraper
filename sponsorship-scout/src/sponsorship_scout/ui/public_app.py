@@ -248,7 +248,7 @@ if scan_button:
                         job['_raw_score'] = score
                         if score < 50:
                             import urllib.parse
-                            encoded_url = urllib.parse.quote_plus(job.get('url', ''))
+                            encoded_url = urllib.parse.quote_plus(job.get('url') or '')
                             job['Boost ATS Score'] = f"https://tinytoolzhub.org/ats-matcher?utm_source=sponsorship_scout_table&cv_id={cv_uuid}&job_url={encoded_url}"
                         else:
                             job['Boost ATS Score'] = None
