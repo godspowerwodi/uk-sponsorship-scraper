@@ -238,7 +238,7 @@ if scan_button:
                         job['CV Match Score'] = f"{score:.1f}%"
                         job['_raw_score'] = score
                         if score < 50:
-                            job['Boost ATS Score'] = 'https://tinytoolzhub.org/ats-matcher'
+                            job['Boost ATS Score'] = 'https://tinytoolzhub.org/ats-matcher?utm_source=sponsorship_scout_table'
                         else:
                             job['Boost ATS Score'] = None
                         
