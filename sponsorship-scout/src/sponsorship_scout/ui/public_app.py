@@ -266,7 +266,7 @@ if scan_button:
                                 vec = CountVectorizer(stop_words=custom_stops, ngram_range=(1, 2), max_features=20)
                                 vec.fit([jd_text])
                                 keywords = vec.get_feature_names_out()
-                                matches = sum(1 for kw in keywords if kw in cv_lower)
+                                matches = sum(1 for kw in keywords if re.search(rf'\b{re.escape(kw)}\b', cv_lower))
                                 score = (matches / len(keywords)) * 100 if len(keywords) > 0 else 0.0
                             except ValueError:
                                 score = 0.0
