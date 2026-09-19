@@ -237,6 +237,10 @@ if scan_button:
                         score = cosine_similarities[i] * 100
                         job['CV Match Score'] = f"{score:.1f}%"
                         job['_raw_score'] = score
+                        if score < 50:
+                            job['Boost ATS Score'] = 'https://tinytoolzhub.org/ats-matcher'
+                        else:
+                            job['Boost ATS Score'] = None
                         
                     new_jobs.sort(key=lambda x: x.get('_raw_score', 0), reverse=True)
                 except Exception as e:
@@ -255,7 +259,7 @@ if scan_button:
             if exact_matches:
                 st.success(f"Found {len(exact_matches)} exact matches!")
                 df_exact = pd.DataFrame(exact_matches)
-                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'created_at']
+                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'Boost ATS Score', 'created_at']
                 df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols and c not in ('description', '_raw_score', 'id')]]
                 
                 col1, col2 = st.columns(2)
@@ -264,7 +268,7 @@ if scan_button:
                 with col2:
                     st.metric("Unique Companies", df_exact['company'].nunique())
                     
-                st.dataframe(df_exact, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link")}, hide_index=True)
+                st.dataframe(df_exact, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link"), "Boost ATS Score": st.column_config.LinkColumn("Boost ATS Score", display_text="⚠️ Optimize CV")}, hide_index=True)
             else:
                 st.warning("We couldn't find an exact match for your search, but here are other roles like it:")
                 
@@ -272,9 +276,9 @@ if scan_button:
                 if exact_matches:
                     st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
                 df_broad = pd.DataFrame(broader_matches)
-                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'created_at']
+                cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'Boost ATS Score', 'created_at']
                 df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols and c not in ('description', '_raw_score', 'id')]]
-                st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link")}, hide_index=True)
+                st.dataframe(df_broad, use_container_width=True, column_config={"url": st.column_config.LinkColumn("Apply Link"), "Boost ATS Score": st.column_config.LinkColumn("Boost ATS Score", display_text="⚠️ Optimize CV")}, hide_index=True)
         else:
             st.warning("No sponsored jobs found matching your criteria.")
 
