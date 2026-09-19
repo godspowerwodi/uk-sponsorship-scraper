@@ -116,7 +116,7 @@ with col4:
     salary_threshold = st.selectbox("Salary Threshold", ["Any", "Meets Threshold or Unknown", "Strictly Meets Threshold"])
 
 cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against full job descriptions.", max_chars=50000)
-st.caption("This runs a strict ATS Keyword Match against the top requirements in the full job description.")
+st.caption("This runs a strict ATS keyword algorithm against the full job description.")
 st.markdown("<p style='font-size: 11px; color: #888; margin-top: -10px;'>(Your CV is temporarily securely stored for 24 hours to enable cross-platform AI ATS Optimization, after which it is permanently deleted. We do not sell or use this data for any other purpose. For peace of mind, feel free to omit your name and contact info before pasting.)</p>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -302,7 +302,7 @@ if scan_button:
                     st.success(f"Found {len(exact_matches)} exact matches!")
                     df_exact = pd.DataFrame(exact_matches)
                     cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'created_at']
-                    df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols and c not in ('description', '_raw_score', 'id')]]
+                    df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols and c not in ('description', '_raw_score', 'id', 'visa_routes')]]
                 
                     col1, col2 = st.columns(2)
                     with col1:
@@ -322,7 +322,7 @@ if scan_button:
                         st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
                     df_broad = pd.DataFrame(broader_matches)
                     cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'created_at']
-                    df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols and c not in ('description', '_raw_score', 'id')]]
+                    df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols and c not in ('description', '_raw_score', 'id', 'visa_routes')]]
                 
                     if 'ATS Status' in df_broad.columns and (df_broad['ATS Status'] == "⚠️ Low Score (Fails ATS)").any():
                         st.error("🚨 **Your CV is failing the automated ATS screen for some of these jobs.** Your resume is missing critical keywords. Companies use Applicant Tracking Systems to automatically reject CVs that don't match the Job Description. 👉 **Click the '⚠️ Optimize CV' link in the table below to have our AI automatically rewrite your CV for that specific role.**")
