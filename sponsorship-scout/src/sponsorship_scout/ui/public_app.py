@@ -114,7 +114,7 @@ with col3:
 with col4:
     salary_threshold = st.selectbox("Salary Threshold", ["Any", "Meets Threshold or Unknown", "Strictly Meets Threshold"])
 
-cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against full job descriptions.")
+cv_text = st.text_area("Paste your CV (Optional for ATS Match)", help="Paste your CV text to get a match score against full job descriptions.", max_chars=50000)
 st.caption("This will calculate a TF-IDF Cosine Similarity match score against the full job description.")
 st.markdown("<p style='font-size: 11px; color: #888; margin-top: -10px;'>Your CV is temporarily securely stored for 24 hours to enable cross-platform AI ATS Optimization, after which it is permanently deleted. We do not sell or use this data for any other purpose. For peace of mind, feel free to omit your name and contact info before pasting.</p>", unsafe_allow_html=True)
 
