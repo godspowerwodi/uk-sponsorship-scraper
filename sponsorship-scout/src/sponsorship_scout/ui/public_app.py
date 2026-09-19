@@ -215,12 +215,21 @@ if scan_button:
                     # LAZY FETCH DESCRIPTIONS FOR MATCHED JOBS ONLY
                     job_ids = [j['id'] for j in new_jobs if 'id' in j]
                     descriptions_map = {}
+                    cv_uuid = ""
                     if job_ids:
                         supabase_url = os.environ.get("SUPABASE_URL")
                         supabase_key = os.environ.get("SUPABASE_KEY")
                         if supabase_url and supabase_key:
                             from supabase import create_client, Client
                             supabase: Client = create_client(supabase_url, supabase_key)
+                            
+                            try:
+                                cv_insert = supabase.table("temp_cvs").insert({"cv_text": cv_text.strip()}).execute()
+                                if cv_insert.data:
+                                    cv_uuid = cv_insert.data[0].get("id", "")
+                            except Exception as e:
+                                st.warning(f"Failed to store CV temporarily: {e}")
+                                
                             for i in range(0, len(job_ids), 100):
                                 chunk_ids = job_ids[i:i+100]
                                 desc_resp = supabase.table("jobs").select("id, description").in_("id", chunk_ids).execute()
@@ -238,7 +247,9 @@ if scan_button:
                         job['CV Match Score'] = f"{score:.1f}%"
                         job['_raw_score'] = score
                         if score < 50:
-                            job['Boost ATS Score'] = 'https://tinytoolzhub.org/ats-matcher?utm_source=sponsorship_scout_table'
+                            import urllib.parse
+                            encoded_url = urllib.parse.quote_plus(job.get('url', ''))
+                            job['Boost ATS Score'] = f"https://tinytoolzhub.org/ats-matcher?utm_source=sponsorship_scout_table&cv_id={cv_uuid}&job_url={encoded_url}"
                         else:
                             job['Boost ATS Score'] = None
                         
