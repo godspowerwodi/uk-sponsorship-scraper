@@ -301,7 +301,7 @@ if scan_button:
                 if exact_matches:
                     st.success(f"Found {len(exact_matches)} exact matches!")
                     df_exact = pd.DataFrame(exact_matches)
-                    cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'created_at']
+                    cols = ['company', 'title', 'location', 'url', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'routes', 'created_at']
                     df_exact = df_exact[[c for c in cols if c in df_exact.columns] + [c for c in df_exact.columns if c not in cols and c not in ('description', '_raw_score', 'id', 'visa_routes')]]
                 
                     col1, col2 = st.columns(2)
@@ -321,7 +321,7 @@ if scan_button:
                     if exact_matches:
                         st.info(f"Found {len(broader_matches)} broader matches similar to your search:")
                     df_broad = pd.DataFrame(broader_matches)
-                    cols = ['company', 'title', 'location', 'url', 'routes', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'created_at']
+                    cols = ['company', 'title', 'location', 'url', 'salary', 'Salary Check', 'CV Match Score', 'ATS Status', 'Boost ATS Score', 'routes', 'created_at']
                     df_broad = df_broad[[c for c in cols if c in df_broad.columns] + [c for c in df_broad.columns if c not in cols and c not in ('description', '_raw_score', 'id', 'visa_routes')]]
                 
                     if 'ATS Status' in df_broad.columns and (df_broad['ATS Status'] == "⚠️ Low Score (Fails ATS)").any():
