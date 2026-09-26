@@ -65,7 +65,11 @@ async def scan_companies(tenant_ids: Set[str], search_terms: List[str] = None) -
                     async with session.head(url, timeout=10, ssl=False, allow_redirects=True) as resp:
                         if resp.status < 400:
                             return job
-            except:
+                        elif resp.status in (403, 405):
+                            async with session.get(url, timeout=10, ssl=False, allow_redirects=True) as get_resp:
+                                if get_resp.status < 400:
+                                    return job
+            except Exception:
                 pass
             return None
 
