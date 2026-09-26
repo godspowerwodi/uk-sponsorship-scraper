@@ -54,6 +54,29 @@ async def scan_companies(tenant_ids: Set[str], search_terms: List[str] = None) -
             
             tenant_tasks.clear()
             chunk_results.clear()
+
+        link_sem = asyncio.Semaphore(100)
+        async def check_link(job, session):
+            url = job.get('url')
+            if not url or "jobs.nhs.uk" in url:
+                return job # NHS blocks head requests
+            try:
+                async with link_sem:
+                    async with session.head(url, timeout=10, ssl=False, allow_redirects=True) as resp:
+                        if resp.status < 400:
+                            return job
+                        elif resp.status in (403, 405):
+                            async with session.get(url, timeout=10, ssl=False, allow_redirects=True) as get_resp:
+                                if get_resp.status < 400:
+                                    return job
+            except Exception:
+                pass
+            return None
+
+        print(f"Validating {len(all_jobs)} URLs for dead links...")
+        check_tasks = [check_link(job, session) for job in all_jobs]
+        results = await asyncio.gather(*check_tasks)
+        all_jobs = [r for r in results if r]
             
     print(f"Scanned endpoints. Found {len(all_jobs)} total jobs.")
     return all_jobs
