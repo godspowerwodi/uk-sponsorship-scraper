@@ -56,12 +56,19 @@ def send_to_supabase(jobs: List[Dict]):
             three_days_ago_string = (datetime.utcnow() - timedelta(days=3)).isoformat()
             fourteen_days_ago_string = (datetime.utcnow() - timedelta(days=14)).isoformat()
             
-            # 1. Purge Dead Jobs (removed from API)
-            supabase.table("jobs").delete().lt("last_seen_at", three_days_ago_string).filter("url", "not.ilike", "%jobs.nhs.uk%").execute()
+            # 1. Purge Dead Jobs (removed from API) - wrapped in try/except to handle statement timeouts on large text filters
+            try:
+                supabase.table("jobs").delete().lt("last_seen_at", three_days_ago_string).filter("url", "not.ilike", "%jobs.nhs.uk%").execute()
+                print("[Supabase] Cleaned up dead jobs (>3 days unseen).")
+            except Exception as e:
+                print(f"[Supabase] Timeout/Error purging dead jobs: {e}")
             
-            # 2. Purge Ghost Jobs (stale on API)
-            supabase.table("jobs").delete().lt("created_at", fourteen_days_ago_string).execute()
-            
-            print(f"[Supabase] Cleaned up dead jobs (>3 days unseen) and ghost jobs (>14 days old).")
+            # 2. Purge Ghost Jobs (stale on API) - forcefully deletes jobs older than 14 days
+            try:
+                supabase.table("jobs").delete().lt("created_at", fourteen_days_ago_string).execute()
+                print("[Supabase] Cleaned up ghost jobs (>14 days old).")
+            except Exception as e:
+                print(f"[Supabase] Timeout/Error purging ghost jobs: {e}")
+                
         except Exception as e:
             print(f"[Supabase] Error upserting/deleting jobs: {e}")
