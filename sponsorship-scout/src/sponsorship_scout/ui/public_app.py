@@ -177,7 +177,17 @@ if st.session_state.is_searching:
                 matches_title = True
                 if titles:
                     from rapidfuzz import fuzz
-                    matches_title = any(fuzz.partial_ratio(term, title_lower) > 75 or fuzz.token_set_ratio(term, title_lower) > 75 for term in titles)
+                    matches_title = False
+                    for term in titles:
+                        if len(term) <= 3:
+                            # Require strict word boundary for short acronyms like "AI", "HR", "UX" to prevent "Trainee" matching "ai"
+                            if re.search(r'\b' + re.escape(term) + r'\b', title_lower):
+                                matches_title = True
+                                break
+                        else:
+                            if fuzz.partial_ratio(term, title_lower) > 75 or fuzz.token_set_ratio(term, title_lower) > 75:
+                                matches_title = True
+                                break
                 
                 matches_loc = True
                 if locs:
