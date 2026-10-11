@@ -107,9 +107,11 @@ with st.expander("ℹ️ How to use this search", expanded=True):
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    job_title = st.text_input("Job Title Keywords", "Data Engineer", help="Comma-separated keywords for job titles.")
+    default_title = st.query_params.get("search", "Data Engineer")
+    job_title = st.text_input("Job Title Keywords", default_title, help="Comma-separated keywords for job titles.")
 with col2:
-    location = st.text_input("Location", "London", help="Comma-separated locations.")
+    default_loc = st.query_params.get("location", "London")
+    location = st.text_input("Location", default_loc, help="Comma-separated locations.")
 with col3:
     role_level = st.selectbox("Role Level", ["Any", "Junior / Entry", "Mid Level", "Senior / Lead", "Director / Exec"])
 with col4:
@@ -122,6 +124,10 @@ st.markdown("<p style='font-size: 11px; color: #888; margin-top: -10px;'>(Your C
 st.markdown("<br>", unsafe_allow_html=True)
 if 'is_searching' not in st.session_state:
     st.session_state.is_searching = False
+if 'auto_triggered' not in st.session_state:
+    if st.query_params.get("auto_search") == "true":
+        st.session_state.is_searching = True
+    st.session_state.auto_triggered = True
 if 'search_done' not in st.session_state:
     st.session_state.search_done = False
 if 'search_messages' not in st.session_state:
