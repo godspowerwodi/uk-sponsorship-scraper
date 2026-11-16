@@ -86,12 +86,12 @@ def parse_salary_and_check(salary_str: str) -> str:
         return '🟠 Amber'
     clean_nums = [float(n.replace(',', '')) for n in nums]
     max_sal = max(clean_nums)
-    return '🟢 Green' if max_sal >= 41800 else '🔴 Red'
+    return '🟢 Green' if max_sal >= 41700 else '🔴 Red'
 
 st.title("💼 UK Sponsorship Job Scout")
 st.markdown("Scan for live jobs from UK companies that offer visa sponsorship, straight from ATS platforms.")
 
-st.info("**Salary Check Legend**: 🟢 >= £41,800 | 🔴 < £41,800 | 🟠 Missing or Unclear (Depends on experience, hourly rate, etc.)\n\n*Note: We use the standard £41,800 Skilled Worker rate to calculate the salary traffic light. Sponsorship criteria may differ based on your visa type (e.g., Health and Care visas have a much lower threshold).*")
+st.info("**Salary Check Legend**: 🟢 >= £41,700 | 🔴 < £41,700 | 🟠 Missing or Unclear (Depends on experience, hourly rate, etc.)\n\n*Note: We use the standard £41,700 Skilled Worker rate to calculate the salary traffic light. Sponsorship criteria may differ based on your visa type (e.g., Health and Care visas or New Entrants have a much lower threshold).*")
 
 st.divider()
 
