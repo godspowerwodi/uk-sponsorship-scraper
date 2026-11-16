@@ -56,19 +56,62 @@ def send_to_supabase(jobs: List[Dict]):
             three_days_ago_string = (datetime.utcnow() - timedelta(days=3)).isoformat()
             fourteen_days_ago_string = (datetime.utcnow() - timedelta(days=14)).isoformat()
             
-            # 1. Purge Dead Jobs (removed from API) - wrapped in try/except to handle statement timeouts on large text filters
+            def batch_delete_ids(ids_to_delete: List[str], label: str):
+                if not ids_to_delete:
+                    print(f"[Supabase] No {label} to delete.")
+                    return
+                del_batch_size = 200
+                deleted_count = 0
+                for j in range(0, len(ids_to_delete), del_batch_size):
+                    chunk = ids_to_delete[j:j + del_batch_size]
+                    supabase.table("jobs").delete().in_("id", chunk).execute()
+                    deleted_count += len(chunk)
+                print(f"[Supabase] Cleaned up {deleted_count} {label} in batches of {del_batch_size}.")
+
+            # 1. Purge jobs unseen for > 14 days (applies to ALL jobs, including NHS)
             try:
-                supabase.table("jobs").delete().lt("last_seen_at", three_days_ago_string).filter("url", "not.ilike", "%jobs.nhs.uk%").execute()
-                print("[Supabase] Cleaned up dead jobs (>3 days unseen).")
+                stale_ids = []
+                while True:
+                    resp = supabase.table("jobs").select("id").lt("last_seen_at", fourteen_days_ago_string).limit(1000).execute()
+                    if not resp.data:
+                        break
+                    chunk_ids = [r["id"] for r in resp.data]
+                    stale_ids.extend(chunk_ids)
+                    batch_delete_ids(chunk_ids, "stale jobs (last_seen_at > 14 days)")
+                    if len(chunk_ids) < 1000:
+                        break
+                if not stale_ids:
+                    print("[Supabase] Cleaned up stale jobs (0 rows with last_seen_at > 14 days).")
             except Exception as e:
-                print(f"[Supabase] Timeout/Error purging dead jobs: {e}")
-            
-            # 2. Purge Ghost Jobs (stale on API) - forcefully deletes jobs older than 14 days
+                print(f"[Supabase] Error purging stale jobs (last_seen_at > 14d): {e}")
+
+            # 2. Purge Dead ATS Jobs (unseen > 3 days for non-NHS APIs)
             try:
-                supabase.table("jobs").delete().lt("created_at", fourteen_days_ago_string).execute()
+                while True:
+                    resp = supabase.table("jobs").select("id").lt("last_seen_at", three_days_ago_string).filter("url", "not.ilike", "%jobs.nhs.uk%").limit(1000).execute()
+                    if not resp.data:
+                        break
+                    chunk_ids = [r["id"] for r in resp.data]
+                    batch_delete_ids(chunk_ids, "dead ATS jobs (>3 days unseen)")
+                    if len(chunk_ids) < 1000:
+                        break
+                print("[Supabase] Cleaned up dead ATS jobs (>3 days unseen).")
+            except Exception as e:
+                print(f"[Supabase] Error purging dead ATS jobs: {e}")
+
+            # 3. Purge Ghost Jobs (created_at > 14 days ago)
+            try:
+                while True:
+                    resp = supabase.table("jobs").select("id").lt("created_at", fourteen_days_ago_string).limit(1000).execute()
+                    if not resp.data:
+                        break
+                    chunk_ids = [r["id"] for r in resp.data]
+                    batch_delete_ids(chunk_ids, "ghost jobs (created_at > 14 days)")
+                    if len(chunk_ids) < 1000:
+                        break
                 print("[Supabase] Cleaned up ghost jobs (>14 days old).")
             except Exception as e:
-                print(f"[Supabase] Timeout/Error purging ghost jobs: {e}")
+                print(f"[Supabase] Error purging ghost jobs: {e}")
                 
         except Exception as e:
             print(f"[Supabase] Error upserting/deleting jobs: {e}")
